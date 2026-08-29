@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Meow Whisper</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         :root {
             --bg: #f4eae1;
@@ -14,112 +15,364 @@
             --text: #222222;
             --msg-sent: #8a786d;
             --msg-rec: #ffffff;
+            --paw-op: 0.08;
         }
+
         body.dark { --bg: #1a1a2e; --panel: #16213e; --card-bg: #0f3460; --text: #ffffff; --msg-sent: #e94560; --msg-rec: #1f4068; }
         body.mint { --bg: #d8edea; --panel: #b8e0d8; --accent: #4a9e8d; --msg-sent: #4a9e8d; }
         body.blue { --bg: #dceef7; --panel: #bce0f2; --accent: #558eb8; --msg-sent: #558eb8; }
-        
-        * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; }
-        body { background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        body.hitech { --bg: #e2e8f0; --panel: #cbd5e1; --accent: #475569; --msg-sent: #475569; }
+        body.rtl { direction: rtl; }
 
-        .header-tabs { display: flex; background: var(--panel); padding: 8px; gap: 8px; z-index: 10; align-items: center; }
-        .tab { flex: 1; padding: 10px; border: none; background: rgba(255,255,255,0.4); cursor: pointer; border-radius: 10px; font-weight: bold; color: var(--text); font-size: 13px; text-align: center; }
+        * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; }
+        body { background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; transition: 0.3s; }
+
+        .bg-paws {
+            position: fixed; inset: 0; opacity: var(--paw-op); pointer-events: none; z-index: 0;
+            background-image: radial-gradient(circle at center, var(--accent) 20%, transparent 20%),
+                              radial-gradient(circle at 40% 40%, var(--accent) 15%, transparent 15%),
+                              radial-gradient(circle at 60% 40%, var(--accent) 15%, transparent 15%);
+            background-size: 60px 60px;
+        }
+
+        .app-header { background: var(--panel); padding: 10px; display: flex; flex-direction: column; align-items: center; gap: 6px; z-index: 10; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .brand { display: flex; align-items: center; gap: 8px; font-weight: bold; font-size: 18px; color: var(--accent); }
+        .brand-logo { font-size: 24px; }
+        
+        .header-tabs { display: flex; width: 100%; gap: 6px; }
+        .tab { flex: 1; padding: 8px; border: none; background: rgba(255,255,255,0.4); cursor: pointer; border-radius: 10px; font-weight: bold; color: var(--text); font-size: 12px; text-align: center; }
         .tab.active { background: var(--accent); color: white; }
 
-        .view { display: none; flex: 1; flex-direction: column; overflow-y: auto; padding: 15px; }
+        #chats-drawer { position: fixed; top: 0; left: -280px; width: 280px; height: 100%; background: var(--card-bg); z-index: 400; box-shadow: 5px 0 15px rgba(0,0,0,0.1); transition: 0.3s ease; display: flex; flex-direction: column; }
+        #chats-drawer.open { left: 0; }
+        .drawer-header { padding: 15px; background: var(--panel); font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
+        .drawer-list { flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+        .chat-item { padding: 10px; border-radius: 10px; background: rgba(0,0,0,0.03); cursor: pointer; display: flex; align-items: center; gap: 10px; }
+        .chat-item.active { background: var(--accent); color: white; }
+
+        .view { display: none; flex: 1; flex-direction: column; overflow-y: auto; position: relative; z-index: 1; }
         .view.active { display: flex; }
 
-        .connect-bar { background: var(--card-bg); padding: 10px; display: flex; gap: 8px; align-items: center; border-radius: 10px; margin-bottom: 10px; }
-        .connect-bar input { flex: 1; padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.15); outline: none; }
-        .connect-bar button { padding: 8px 16px; border-radius: 8px; border: none; background: var(--accent); color: white; font-weight: bold; cursor: pointer; }
+        .connect-bar { background: var(--card-bg); padding: 8px 12px; display: flex; gap: 8px; align-items: center; border-bottom: 1px solid rgba(0,0,0,0.05); }
+        .connect-bar input { flex: 1; padding: 6px 10px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.15); outline: none; font-size: 12px; background: var(--bg); color: var(--text); }
+        .connect-bar button { padding: 6px 12px; border-radius: 8px; border: none; background: var(--accent); color: white; font-weight: bold; cursor: pointer; font-size: 12px; }
 
-        #chat-area { flex: 1; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; padding-bottom: 10px; }
-        .msg { padding: 10px 14px; background: var(--msg-rec); border-radius: 14px; max-width: 75%; align-self: flex-start; box-shadow: 0 1px 3px rgba(0,0,0,0.08); word-break: break-word; }
+        #chat-area { flex: 1; padding: 15px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
+        .msg { padding: 10px 14px; background: var(--msg-rec); border-radius: 14px; max-width: 75%; align-self: flex-start; box-shadow: 0 1px 3px rgba(0,0,0,0.08); display: flex; flex-direction: column; gap: 4px; word-break: break-word; }
         .msg.sent { background: var(--msg-sent); color: #fff; align-self: flex-end; }
+        .msg-status { font-size: 11px; opacity: 0.8; align-self: flex-end; cursor: pointer; }
 
-        .input-bar { padding: 10px; display: flex; gap: 8px; background: var(--card-bg); align-items: center; border-radius: 10px; }
-        .input-bar input { flex: 1; padding: 10px; border-radius: 20px; border: 1px solid rgba(0,0,0,0.1); outline: none; }
-        .send-btn { padding: 10px 18px; border-radius: 20px; border: none; background: var(--accent); color: white; font-weight: bold; cursor: pointer; }
+        /* Маска кошачьего кружочка для видео */
+        .cat-video-container {
+            width: 150px; height: 150px; position: relative;
+            clip-path: polygon(20% 0%, 0% 40%, 15% 100%, 85% 100%, 100% 40%, 80% 0%, 50% 20%);
+            border-radius: 50%; overflow: hidden; background: #000;
+        }
+        .cat-video-container video { width: 100%; height: 100%; object-fit: cover; }
+
+        .input-bar { padding: 8px 12px; display: flex; gap: 6px; background: var(--card-bg); align-items: center; border-top: 1px solid rgba(0,0,0,0.05); }
+        .icon-btn { border: none; background: none; font-size: 20px; cursor: pointer; padding: 4px; opacity: 0.8; }
+        .input-bar input[type="text"] { flex: 1; padding: 8px 12px; border-radius: 20px; border: 1px solid rgba(0,0,0,0.1); outline: none; background: var(--bg); color: var(--text); }
+        .send-main-btn { padding: 8px 16px; border-radius: 20px; border: none; background: var(--accent); color: white; font-weight: bold; cursor: pointer; }
+
+        .settings-card { background: var(--card-bg); margin: 15px; padding: 20px; border-radius: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.04); max-width: 500px; width: calc(100% - 30px); align-self: center; }
+        .settings-group { margin-bottom: 16px; }
+        .settings-group label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 14px; }
+        .settings-group select { width: 100%; padding: 8px; border-radius: 8px; border: 1px solid #ccc; background: var(--bg); color: var(--text); }
+        .sound-test-btn { margin-top: 6px; padding: 6px 12px; border: none; background: var(--accent); color: white; border-radius: 6px; cursor: pointer; font-size: 12px; }
+
+        #scanner-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; z-index: 500; flex-direction: column; gap: 15px; }
+        #reader { width: 280px; background: white; border-radius: 12px; overflow: hidden; }
     </style>
 </head>
 <body class="beige">
 
-    <div class="header-tabs">
-        <button class="tab active" onclick="switchTab('chat')">Чат</button>
-        <button class="tab" onclick="switchTab('qr')">QR-код</button>
-        <button class="tab" onclick="switchTab('settings')">Настройки</button>
+    <div class="bg-paws"></div>
+
+    <div id="chats-drawer">
+        <div class="drawer-header">
+            <span id="lbl-chats-title">Чаты</span>
+            <button onclick="toggleDrawer()" style="border:none;background:none;cursor:pointer;font-size:18px;">✕</button>
+        </div>
+        <div class="drawer-list" id="chats-list-container"></div>
+    </div>
+
+    <div class="app-header">
+        <div class="brand">
+            <span class="brand-logo">🐱</span>
+            <span>Meow Whisper</span>
+        </div>
+        <div class="header-tabs">
+            <button class="tab" onclick="toggleDrawer()">📁</button>
+            <button class="tab active" id="tab-chat" onclick="switchTab('chat')">Чат</button>
+            <button class="tab" id="tab-qr" onclick="switchTab('qr')">QR/Сканер</button>
+            <button class="tab" id="tab-settings" onclick="switchTab('settings')">Настройки</button>
+        </div>
     </div>
 
     <!-- ЧАТ -->
     <div id="view-chat" class="view active">
         <div class="connect-bar">
-            <span id="my-id-label" style="font-size: 12px; font-weight: bold;">ID: ...</span>
-            <input type="text" id="peer-id-input" placeholder="ID собеседника">
-            <button onclick="connectPeer()">Соединить</button>
+            <span id="my-id-label" style="font-size: 12px; font-weight: bold;">ID: mw-xxxx</span>
+            <input type="text" id="peer-id-input" placeholder="Введите ID...">
+            <button id="btn-connect" onclick="connectPeer()">Соединить</button>
         </div>
 
-        <div id="chat-area">
-            <div class="msg">🐱 Добро пожаловать в Meow Whisper! Напишите сообщение ниже.</div>
-        </div>
+        <div id="chat-area"></div>
 
         <div class="input-bar">
-            <input type="text" id="msg-input" placeholder="Сообщение..." onkeypress="if(event.key==='Enter') sendMessage()">
-            <button class="send-btn" onclick="sendMessage()">Отправить</button>
+            <label class="icon-btn" title="Медиа">📷<input type="file" id="media-input" accept="image/*,video/*" style="display:none" onchange="sendMedia(this)"></label>
+            <button class="icon-btn" title="Голосовое" onclick="toggleAudioRecord()">🎤</button>
+            <button class="icon-btn" title="Кошачий кружочек" onclick="toggleCatVideoRecord()">🐱📹</button>
+            <input type="text" id="msg-input" placeholder="Сообщение..." onkeypress="if(event.key==='Enter') sendTextMessage()">
+            <button class="send-main-btn" id="btn-send" onclick="sendTextMessage()">Отправить</button>
         </div>
     </div>
 
-    <!-- QR -->
-    <div id="view-qr" class="view" style="align-items: center; justify-content: center;">
+    <!-- QR / СКТАНЕР -->
+    <div id="view-qr" class="view" style="align-items: center; justify-content: center; padding: 20px;">
         <div id="my-qr" style="padding: 15px; background: white; border-radius: 12px;"></div>
+        <button id="btn-open-scanner" onclick="startScanner()" style="margin-top: 20px; padding: 10px 20px; border-radius: 10px; border: none; background: var(--accent); color: white; font-weight: bold; cursor: pointer;">Открыть Сканер</button>
     </div>
 
     <!-- НАСТРОЙКИ -->
     <div id="view-settings" class="view">
-        <h3>Тема оформления:</h3>
-        <select onchange="document.body.className = this.value" style="padding: 10px; margin-top: 10px; border-radius: 8px;">
-            <option value="beige">Светлая Бежевая</option>
-            <option value="dark">Тёмная</option>
-            <option value="mint">Мятная</option>
-            <option value="blue">Голубая</option>
-        </select>
+        <div class="settings-card">
+            <div class="settings-group">
+                <label id="lbl-lang">Язык интерфейса:</label>
+                <select id="lang-select" onchange="changeLanguage(this.value)">
+                    <option value="ru">Русский</option>
+                    <option value="en">English</option>
+                    <option value="tr">Türkçe</option>
+                    <option value="tt">Татарча</option>
+                    <option value="ar">العربية</option>
+                </select>
+            </div>
+            <div class="settings-group">
+                <label id="lbl-theme">Тема оформления:</label>
+                <select id="theme-select" onchange="document.body.className = this.value">
+                    <option value="beige">Светлый Бежевый</option>
+                    <option value="blue">Пастельно-голубой</option>
+                    <option value="mint">Нежный Мятный</option>
+                    <option value="hitech">Хай-тек серый</option>
+                    <option value="dark">Ночной темный</option>
+                </select>
+            </div>
+            <div class="settings-group">
+                <label id="lbl-sound">Звук уведомлений:</label>
+                <select id="sound-select">
+                    <option value="meow">Звук Мяу</option>
+                    <option value="crunch">Хруст корма</option>
+                    <option value="hiss">Шипение шшш</option>
+                </select>
+                <button class="sound-test-btn" onclick="playSound()">Прослушать звук</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="scanner-modal">
+        <div id="reader"></div>
+        <button onclick="stopScanner()" style="padding: 8px 20px; border-radius: 8px; border: none; background: white; font-weight:bold;">Закрыть</button>
     </div>
 
     <script>
+        const i18n = {
+            ru: { chat: "Чат", qr: "QR/Сканер", settings: "Настройки", lang: "Язык интерфейса:", theme: "Тема оформления:", sound: "Звук уведомлений:", send: "Сообщение...", openScanner: "Открыть Сканер", myKittens: "Мои котятки", chats: "Чаты", connect: "Соединить" },
+            en: { chat: "Chat", qr: "QR/Scanner", settings: "Settings", lang: "Interface Language:", theme: "Theme:", sound: "Notification Sound:", send: "Message...", openScanner: "Open Scanner", myKittens: "My Kittens", chats: "Chats", connect: "Connect" },
+            tr: { chat: "Sohbet", qr: "QR/Tarayıcı", settings: "Ayarlar", lang: "Arayüz Dili:", theme: "Tema:", sound: "Bildirim Sesi:", send: "Mesaj...", openScanner: "Tarayıcıyı Aç", myKittens: "Kediciklerim", chats: "Sohbetler", connect: "Bağlan" },
+            tt: { chat: "Чат", qr: "QR/Сканер", settings: "Көйләүләр", lang: "Интерфейс теле:", theme: "Бизәлеш темасы:", sound: "Билге тавышы:", send: "Хәбәр...", openScanner: "Сканерны ачу", myKittens: "Минем песиләрем", chats: "Чатлар", connect: "Тоташтыру" },
+            ar: { chat: "المحادثة", qr: "QR/الماسح", settings: "الإعدادات", lang: "لغة الواجهة:", theme: "المظهر:", sound: "صوت الإشعارات:", send: "رسالة...", openScanner: "فتح الماسح", myKittens: "قططي", chats: "المحادثات", connect: "اتصال" }
+        };
+
         const myId = 'mw-' + Math.random().toString(36).substr(2, 6);
-        document.getElementById('my-id-label').innerText = 'Мой ID: ' + myId;
-        
-        setTimeout(() => {
-            new QRCode(document.getElementById("my-qr"), myId);
-        }, 500);
+        document.getElementById('my-id-label').innerText = `ID: ${myId}`;
+
+        let chats = JSON.parse(localStorage.getItem('mw_chats')) || {
+            'favorites': { name: 'Мои котятки', messages: [] }
+        };
+        let activeChatId = 'favorites';
+        let html5QrcodeScanner = null;
+        let isRecordingAudio = false, mediaRecorder = null, audioChunks = [];
+
+        setTimeout(() => new QRCode(document.getElementById("my-qr"), myId), 300);
+        renderChatsList();
+        loadMessages();
 
         function switchTab(tabName) {
             document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
-            
             document.getElementById('view-' + tabName).classList.add('active');
-            event.target.classList.add('active');
+            document.getElementById('tab-' + tabName).classList.add('active');
         }
 
-        function sendMessage() {
-            const input = document.getElementById('msg-input');
-            const text = input.value.trim();
-            if(!text) return;
+        function toggleDrawer() { document.getElementById('chats-drawer').classList.toggle('open'); }
 
-            const chatArea = document.getElementById('chat-area');
-            const msgEl = document.createElement('div');
-            msgEl.className = 'msg sent';
-            msgEl.innerText = text;
-            chatArea.appendChild(msgEl);
-            
-            input.value = '';
+        function renderChatsList() {
+            let container = document.getElementById('chats-list-container');
+            container.innerHTML = '';
+            for(let id in chats) {
+                let div = document.createElement('div');
+                div.className = `chat-item ${activeChatId === id ? 'active' : ''}`;
+                div.innerHTML = `${id === 'favorites' ? '🐱' : '💬'} <span>${chats[id].name}</span>`;
+                div.onclick = () => { activeChatId = id; toggleDrawer(); renderChatsList(); loadMessages(); };
+                container.appendChild(div);
+            }
+        }
+
+        function loadMessages() {
+            let chatArea = document.getElementById('chat-area');
+            chatArea.innerHTML = '';
+            (chats[activeChatId].messages || []).forEach(m => appendMsgUI(m));
             chatArea.scrollTop = chatArea.scrollHeight;
         }
 
+        function appendMsgUI(m) {
+            let chatArea = document.getElementById('chat-area');
+            let div = document.createElement('div');
+            div.className = `msg ${m.sent ? 'sent' : ''}`;
+            
+            if(m.type === 'text') div.innerText = m.content;
+            else if(m.type === 'media') div.innerHTML = m.isVid ? `<video src="${m.content}" controls style="max-width:200px;border-radius:8px;"></video>` : `<img src="${m.content}" style="max-width:200px;border-radius:8px;">`;
+            else if(m.type === 'audio') div.innerHTML = `<audio src="${m.content}" controls style="max-width:200px;"></audio>`;
+            else if(m.type === 'cat-video') div.innerHTML = `<div class="cat-video-container"><video src="${m.content}" autoplay loop muted playsinline></video></div>`;
+
+            let status = document.createElement('span');
+            status.className = 'msg-status';
+            status.innerText = m.read ? '😺' : '😴';
+            status.onclick = () => { m.read = !m.read; status.innerText = m.read ? '😺' : '😴'; saveChats(); };
+            div.appendChild(status);
+
+            chatArea.appendChild(div);
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+
+        function sendTextMessage() {
+            let input = document.getElementById('msg-input');
+            let txt = input.value.trim();
+            if(!txt) return;
+            let m = { type: 'text', content: txt, sent: true, read: false };
+            chats[activeChatId].messages.push(m);
+            saveChats(); appendMsgUI(m); playSound();
+            input.value = '';
+        }
+
+        function sendMedia(input) {
+            let file = input.files[0];
+            if(!file) return;
+            let reader = new FileReader();
+            reader.onload = function(e) {
+                let m = { type: 'media', content: e.target.result, isVid: file.type.startsWith('video'), sent: true, read: false };
+                chats[activeChatId].messages.push(m);
+                saveChats(); appendMsgUI(m); playSound();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function toggleAudioRecord() {
+            if(!isRecordingAudio) {
+                navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+                    mediaRecorder = new MediaRecorder(stream);
+                    audioChunks = [];
+                    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+                    mediaRecorder.onstop = () => {
+                        let blob = new Blob(audioChunks, { type: 'audio/webm' });
+                        let r = new FileReader();
+                        r.onload = e => {
+                            let m = { type: 'audio', content: e.target.result, sent: true, read: false };
+                            chats[activeChatId].messages.push(m); saveChats(); appendMsgUI(m); playSound();
+                        };
+                        r.readAsDataURL(blob);
+                    };
+                    mediaRecorder.start(); isRecordingAudio = true; alert('Идет запись аудио... Нажмите 🎤 еще раз для отправки.');
+                });
+            } else { mediaRecorder.stop(); isRecordingAudio = false; }
+        }
+
+        function toggleCatVideoRecord() {
+            navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then(stream => {
+                let recorder = new MediaRecorder(stream);
+                let chunks = [];
+                recorder.ondataavailable = e => chunks.push(e.data);
+                recorder.onstop = () => {
+                    let blob = new Blob(chunks, { type: 'video/webm' });
+                    let r = new FileReader();
+                    r.onload = e => {
+                        let m = { type: 'cat-video', content: e.target.result, sent: true, read: false };
+                        chats[activeChatId].messages.push(m); saveChats(); appendMsgUI(m); playSound();
+                    };
+                    r.readAsDataURL(blob);
+                    stream.getTracks().forEach(t => t.stop());
+                };
+                recorder.start();
+                setTimeout(() => recorder.stop(), 4000); // Запись кошачьего видео 4 секунды
+                alert('Запись кошачьего кружочка (4 сек)...');
+            });
+        }
+
         function connectPeer() {
-            const peerId = document.getElementById('peer-id-input').value;
-            if(peerId) {
-                alert('Подключение к ' + peerId + ' (демо-режим)');
+            let peerId = document.getElementById('peer-id-input').value.trim();
+            if(!peerId) return;
+            if(!chats[peerId]) chats[peerId] = { name: peerId, messages: [] };
+            activeChatId = peerId; saveChats(); renderChatsList(); loadMessages();
+        }
+
+        function saveChats() { localStorage.setItem('mw_chats', JSON.stringify(chats)); }
+
+        function changeLanguage(lang) {
+            let t = i18n[lang] || i18n.ru;
+            document.getElementById('tab-chat').innerText = t.chat;
+            document.getElementById('tab-qr').innerText = t.qr;
+            document.getElementById('tab-settings').innerText = t.settings;
+            document.getElementById('lbl-lang').innerText = t.lang;
+            document.getElementById('lbl-theme').innerText = t.theme;
+            document.getElementById('lbl-sound').innerText = t.sound;
+            document.getElementById('msg-input').placeholder = t.send;
+            document.getElementById('btn-open-scanner').innerText = t.openScanner;
+            document.getElementById('lbl-chats-title').innerText = t.chats;
+            document.getElementById('btn-connect').innerText = t.connect;
+            if(chats['favorites']) chats['favorites'].name = t.myKittens;
+            renderChatsList();
+            if(lang === 'ar') document.body.classList.add('rtl'); else document.body.classList.remove('rtl');
+        }
+
+        function playSound() {
+            let type = document.getElementById('sound-select').value;
+            let ctx = new (window.AudioContext || window.webkitAudioContext)();
+            let osc = ctx.createOscillator(), gain = ctx.createGain();
+            osc.connect(gain); gain.connect(ctx.destination);
+
+            if(type === 'meow') {
+                osc.frequency.setValueAtTime(400, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 0.15);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+                osc.start(); osc.stop(ctx.currentTime + 0.3);
+            } else if(type === 'crunch') {
+                osc.type = 'square'; osc.frequency.setValueAtTime(150, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+                osc.start(); osc.stop(ctx.currentTime + 0.1);
+            } else if(type === 'hiss') {
+                let bufferSize = ctx.sampleRate * 0.2, buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate), data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+                let noise = ctx.createBufferSource(); noise.buffer = buffer; noise.connect(gain);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+                noise.start(); noise.stop(ctx.currentTime + 0.2);
             }
+        }
+
+        function startScanner() {
+            document.getElementById('scanner-modal').style.display = 'flex';
+            html5QrcodeScanner = new Html5Qrcode("reader");
+            html5QrcodeScanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, text => {
+                document.getElementById('peer-id-input').value = text;
+                stopScanner(); connectPeer(); switchTab('chat');
+            }).catch(e => console.error(e));
+        }
+
+        function stopScanner() {
+            if(html5QrcodeScanner) html5QrcodeScanner.stop().then(() => {
+                document.getElementById('scanner-modal').style.display = 'none';
+            });
+            else document.getElementById('scanner-modal').style.display = 'none';
         }
     </script>
 </body>
