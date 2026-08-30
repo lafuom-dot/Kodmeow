@@ -91,7 +91,6 @@
 </div>
 
 <script>
-    // Точные настройки Firebase с европейским адресом базы
     const firebaseConfig = {
         apiKey: "AIzaSyBYP7VgXjs6eovGU8ptQignO8ha_uQCpwQ",
         authDomain: "my-cat-3db92.firebaseapp.com",
@@ -105,7 +104,6 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // Переводы интерфейса
     const translations = {
         ru: { partnerLabel: "ID друга:", connectBtn: "Войти", placeholder: "Напишите сообщение..." },
         en: { partnerLabel: "Friend ID:", connectBtn: "Connect", placeholder: "Type a message..." },
@@ -114,7 +112,6 @@
         ar: { partnerLabel: "معرف الصديق:", connectBtn: "دخول", placeholder: "اكتب رسالة..." }
     };
 
-    // Звуковые эффекты
     function playSound(type) {
         try {
             const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -149,7 +146,6 @@
         } catch(e) {}
     }
 
-    // Генерация/получение ID пользователя
     let myId = localStorage.getItem('mw_user_id');
     if (!myId) {
         myId = 'mw-' + Math.floor(1000 + Math.random() * 9000);
@@ -181,13 +177,17 @@
         chatRef.off();
 
         document.getElementById('chatBox').innerHTML = '';
+        
         chatRef.on('child_added', (snapshot) => {
             const data = snapshot.val();
-            displayMessage(data.text, data.sender === myId ? 'my' : 'other');
+            // Показываем сообщение от собеседника
             if (data.sender !== myId) {
+                displayMessage(data.text, 'other');
                 const soundType = document.getElementById('soundSelect').value;
                 playSound(soundType);
             }
+        }, (error) => {
+            alert('Ошибка доступа Firebase: ' + error.message);
         });
 
         alert('Соединение установлено!');
@@ -196,12 +196,19 @@
     function sendMessage() {
         const textInput = document.getElementById('messageInput');
         const text = textInput.value.trim();
-        if (!text || !currentChatId) return;
+        if (!text) return;
+        if (!currentChatId) return alert('Сначала нажмите "Войти"!');
 
+        // 1. Сразу отображаем у себя на экране
+        displayMessage(text, 'my');
+
+        // 2. Отправляем в Firebase и ловим возможную ошибку
         db.ref('chats/' + currentChatId + '/messages').push({
             sender: myId,
             text: text,
             timestamp: firebase.database.ServerValue.TIMESTAMP
+        }).catch((err) => {
+            alert('Ошибка отправки в базу: ' + err.message);
         });
 
         const soundType = document.getElementById('soundSelect').value;
