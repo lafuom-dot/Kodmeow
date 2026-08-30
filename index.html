@@ -61,7 +61,8 @@
         .connect-bar input { flex: 1; padding: 6px 10px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.15); outline: none; font-size: 12px; background: var(--bg); color: var(--text); }
         .connect-bar button.conn-btn { padding: 6px 12px; border-radius: 8px; border: none; background: var(--accent); color: white; font-weight: bold; cursor: pointer; font-size: 12px; white-space: nowrap; touch-action: manipulation; }
 
-        .chat-target-banner { background: rgba(0,0,0,0.06); padding: 6px 12px; font-size: 12px; font-weight: bold; text-align: center; color: var(--accent); }
+        .chat-target-banner { background: rgba(0,0,0,0.06); padding: 6px 12px; font-size: 12px; font-weight: bold; text-align: center; color: var(--accent); display: flex; justify-content: center; align-items: center; gap: 6px; }
+        .conn-indicator { width: 8px; height: 8px; border-radius: 50%; background: #4caf50; display: inline-block; }
 
         #chat-area { flex: 1; padding: 12px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
         
@@ -120,12 +121,15 @@
                 <button class="copy-btn" onclick="copyMyId()">📋 Скопировать ID</button>
             </div>
             <div class="input-row">
-                <input type="text" id="peer-id-input" placeholder="Вставьте ID собеседника...">
+                <input type="text" id="peer-id-input" placeholder="Вставьте ID собеседника..." oninput="autoConnectOnInput()">
                 <button class="conn-btn" id="btn-connect" onclick="connectToPartner()">Тоташтыру</button>
             </div>
         </div>
         
-        <div class="chat-target-banner" id="chat-target-title">Чат: Избранное</div>
+        <div class="chat-target-banner" id="chat-target-title">
+            <span class="conn-indicator"></span>
+            <span id="chat-title-text">Чат: Избранное</span>
+        </div>
         <div id="chat-area"></div>
 
         <div class="input-bar">
@@ -263,27 +267,58 @@
             myId = newId;
             localStorage.setItem('mw_permanent_id', myId);
             updateMyIdUI();
-            mqttClient.subscribe(`meow_whisper/${myId}`);
+            subscribeMQTT();
             alert('ID успешно сохранен!');
         }
 
         const localChannel = new BroadcastChannel('meow_whisper_local');
-        const mqttClient = mqtt.connect('wss://broker.hivemq.com:8884/mqtt');
+        
+        // Список резервных серверов MQTT
+        const mqttBrokers = [
+            'wss://broker.emqx.io:8084/mqtt',
+            'wss://broker.hivemq.com:8884/mqtt',
+            'wss://test.mosquitto.org:8081/mqtt'
+        ];
+        let currentBrokerIndex = 0;
+        let mqttClient = null;
 
-        mqttClient.on('connect', () => mqttClient.subscribe(`meow_whisper/${myId}`));
+        function initMQTT() {
+            if(mqttClient) try{ mqttClient.end(); }catch(e){}
+            mqttClient = mqtt.connect(mqttBrokers[currentBrokerIndex], { keepalive: 10, reconnectPeriod: 1000 });
+            
+            mqttClient.on('connect', () => {
+                console.log('Connected to broker:', mqttBrokers[currentBrokerIndex]);
+                subscribeMQTT();
+            });
+
+            mqttClient.on('error', () => {
+                currentBrokerIndex = (currentBrokerIndex + 1) % mqttBrokers.length;
+                setTimeout(initMQTT, 2000);
+            });
+
+            mqttClient.on('message', (topic, payload) => {
+                try { handleIncomingPacket(JSON.parse(payload.toString())); } catch(e){}
+            });
+        }
+
+        function subscribeMQTT() {
+            if(mqttClient && mqttClient.connected) {
+                mqttClient.subscribe(`meow_whisper/${myId}`);
+                if(activeChatId && activeChatId !== 'favorites') {
+                    mqttClient.subscribe(`meow_whisper/${activeChatId}`);
+                }
+            }
+        }
+
         localChannel.onmessage = (event) => handleIncomingPacket(event.data);
-        mqttClient.on('message', (topic, payload) => {
-            try { handleIncomingPacket(JSON.parse(payload.toString())); } catch(e){}
-        });
 
         function handleIncomingPacket(data) {
-            if(data.target === myId) {
+            if(data.target === myId || (data.sender === activeChatId && data.target === myId)) {
                 let sender = data.sender;
                 
                 if(!chats[sender]) {
                     chats[sender] = { name: data.msg.nick || sender, secret: data.secret, messages: [] };
                 } else if(chats[sender].secret && chats[sender].secret !== data.secret) {
-                    alert(`⚠️ Внимание! Попытка подделки ID от ${sender}!`);
                     return;
                 }
 
@@ -297,6 +332,13 @@
                 if(activeChatId === sender) appendMsgUI(msg);
                 else renderChatsList();
                 playSound();
+            }
+        }
+
+        function autoConnectOnInput() {
+            let partnerId = document.getElementById('peer-id-input').value.trim();
+            if(partnerId && partnerId !== myId && partnerId.length >= 4) {
+                switchActiveChat(partnerId);
             }
         }
 
@@ -320,9 +362,10 @@
             saveChats();
             renderChatsList();
             loadMessages();
+            subscribeMQTT();
             
             let titleName = id === 'favorites' ? i18n[currentLang].myKittens : (chats[id].name || id);
-            document.getElementById('chat-target-title').innerText = `Чат: ${titleName}`;
+            document.getElementById('chat-title-text').innerText = `Чат: ${titleName}`;
         }
 
         function dispatchMessage(m) {
@@ -338,16 +381,16 @@
             if(activeChatId !== 'favorites') {
                 let packet = { sender: myId, secret: mySecret, target: activeChatId, msg: m };
                 localChannel.postMessage(packet);
-                mqttClient.publish(`meow_whisper/${activeChatId}`, JSON.stringify(packet));
+                if(mqttClient && mqttClient.connected) {
+                    mqttClient.publish(`meow_whisper/${activeChatId}`, JSON.stringify(packet));
+                }
             }
         }
 
         function sendTextMessage() {
-            if(activeChatId !== 'favorites') {
-                let partnerInput = document.getElementById('peer-id-input').value.trim();
-                if(partnerInput && activeChatId !== partnerInput && partnerInput !== myId) {
-                    switchActiveChat(partnerInput);
-                }
+            let partnerInput = document.getElementById('peer-id-input').value.trim();
+            if(partnerInput && partnerInput !== myId && activeChatId !== partnerInput) {
+                switchActiveChat(partnerInput);
             }
 
             let input = document.getElementById('msg-input');
@@ -557,7 +600,7 @@
             }
             html5QrcodeScanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, text => {
                 document.getElementById('peer-id-input').value = text;
-                stopScanner(); connectToPartner(); switchTab('chat');
+                stopScanner(); switchActiveChat(text); switchTab('chat');
             }).catch(e => console.error(e));
         }
 
@@ -577,6 +620,7 @@
         renderChatsList();
         loadMessages();
         changeLanguage('tt');
+        initMQTT();
     </script>
 </body>
 </html>
