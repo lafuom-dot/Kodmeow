@@ -62,7 +62,6 @@
         .msg.sent { background: var(--msg-sent); color: #fff; align-self: flex-end; }
         .msg-status { font-size: 11px; opacity: 0.8; align-self: flex-end; cursor: pointer; }
 
-        /* Маска кошачьего кружочка для видео */
         .cat-video-container {
             width: 150px; height: 150px; position: relative;
             clip-path: polygon(20% 0%, 0% 40%, 15% 100%, 85% 100%, 100% 40%, 80% 0%, 50% 20%);
@@ -129,7 +128,7 @@
         </div>
     </div>
 
-    <!-- QR / СКТАНЕР -->
+    <!-- QR / СКАНЕР -->
     <div id="view-qr" class="view" style="align-items: center; justify-content: center; padding: 20px;">
         <div id="my-qr" style="padding: 15px; background: white; border-radius: 12px;"></div>
         <button id="btn-open-scanner" onclick="startScanner()" style="margin-top: 20px; padding: 10px 20px; border-radius: 10px; border: none; background: var(--accent); color: white; font-weight: bold; cursor: pointer;">Открыть Сканер</button>
@@ -151,42 +150,63 @@
             <div class="settings-group">
                 <label id="lbl-theme">Тема оформления:</label>
                 <select id="theme-select" onchange="document.body.className = this.value">
-                    <option value="beige">Светлый Бежевый</option>
-                    <option value="blue">Пастельно-голубой</option>
-                    <option value="mint">Нежный Мятный</option>
-                    <option value="hitech">Хай-тек серый</option>
-                    <option value="dark">Ночной темный</option>
+                    <option value="beige" id="opt-t-beige">Светлый Бежевый</option>
+                    <option value="blue" id="opt-t-blue">Пастельно-голубой</option>
+                    <option value="mint" id="opt-t-mint">Нежный Мятный</option>
+                    <option value="hitech" id="opt-t-hitech">Хай-тек серый</option>
+                    <option value="dark" id="opt-t-dark">Ночной темный</option>
                 </select>
             </div>
             <div class="settings-group">
                 <label id="lbl-sound">Звук уведомлений:</label>
                 <select id="sound-select">
-                    <option value="meow">Звук Мяу</option>
-                    <option value="crunch">Хруст корма</option>
-                    <option value="hiss">Шипение шшш</option>
+                    <option value="meow" id="opt-s-meow">Звук Мяу</option>
+                    <option value="crunch" id="opt-s-crunch">Хруст корма</option>
+                    <option value="hiss" id="opt-s-hiss">Шипение шшш</option>
                 </select>
-                <button class="sound-test-btn" onclick="playSound()">Прослушать звук</button>
+                <button class="sound-test-btn" id="btn-test-sound" onclick="playSound()">Прослушать звук</button>
             </div>
         </div>
     </div>
 
     <div id="scanner-modal">
         <div id="reader"></div>
-        <button onclick="stopScanner()" style="padding: 8px 20px; border-radius: 8px; border: none; background: white; font-weight:bold;">Закрыть</button>
+        <button id="btn-close-scanner" onclick="stopScanner()" style="padding: 8px 20px; border-radius: 8px; border: none; background: white; font-weight:bold;">Закрыть</button>
     </div>
 
     <script>
         const i18n = {
-            ru: { chat: "Чат", qr: "QR/Сканер", settings: "Настройки", lang: "Язык интерфейса:", theme: "Тема оформления:", sound: "Звук уведомлений:", send: "Сообщение...", openScanner: "Открыть Сканер", myKittens: "Мои котятки", chats: "Чаты", connect: "Соединить" },
-            en: { chat: "Chat", qr: "QR/Scanner", settings: "Settings", lang: "Interface Language:", theme: "Theme:", sound: "Notification Sound:", send: "Message...", openScanner: "Open Scanner", myKittens: "My Kittens", chats: "Chats", connect: "Connect" },
-            tr: { chat: "Sohbet", qr: "QR/Tarayıcı", settings: "Ayarlar", lang: "Arayüz Dili:", theme: "Tema:", sound: "Bildirim Sesi:", send: "Mesaj...", openScanner: "Tarayıcıyı Aç", myKittens: "Kediciklerim", chats: "Sohbetler", connect: "Bağlan" },
-            tt: { chat: "Чат", qr: "QR/Сканер", settings: "Көйләүләр", lang: "Интерфейс теле:", theme: "Бизәлеш темасы:", sound: "Билге тавышы:", send: "Хәбәр...", openScanner: "Сканерны ачу", myKittens: "Минем песиләрем", chats: "Чатлар", connect: "Тоташтыру" },
-            ar: { chat: "المحادثة", qr: "QR/الماسح", settings: "الإعدادات", lang: "لغة الواجهة:", theme: "المظهر:", sound: "صوت الإشعارات:", send: "رسالة...", openScanner: "فتح الماسح", myKittens: "قططي", chats: "المحادثات", connect: "اتصال" }
+            ru: {
+                chat: "Чат", qr: "QR/Сканер", settings: "Настройки", lang: "Язык интерфейса:", theme: "Тема оформления:", sound: "Звук уведомлений:", send: "Сообщение...", openScanner: "Открыть Сканер", myKittens: "Мои котятки", chats: "Чаты", connect: "Соединить", testSound: "Прослушать звук", close: "Закрыть", placeholderId: "Введите ID...", sendBtn: "Отправить",
+                themes: { beige: "Светлый Бежевый", blue: "Пастельно-голубой", mint: "Нежный Мятный", hitech: "Хай-тек серый", dark: "Ночной темный" },
+                sounds: { meow: "Звук Мяу", crunch: "Хруст корма", hiss: "Шипение шшш" }
+            },
+            en: {
+                chat: "Chat", qr: "QR/Scanner", settings: "Settings", lang: "Interface Language:", theme: "Theme:", sound: "Notification Sound:", send: "Message...", openScanner: "Open Scanner", myKittens: "My Kittens", chats: "Chats", connect: "Connect", testSound: "Listen to sound", close: "Close", placeholderId: "Enter ID...", sendBtn: "Send",
+                themes: { beige: "Light Beige", blue: "Pastel Blue", mint: "Soft Mint", hitech: "Hi-Tech Grey", dark: "Night Dark" },
+                sounds: { meow: "Meow Sound", crunch: "Food Crunch", hiss: "Hissing Shhh" }
+            },
+            tr: {
+                chat: "Sohbet", qr: "QR/Tarayıcı", settings: "Ayarlar", lang: "Arayüz Dili:", theme: "Tema:", sound: "Bildirim Sesi:", send: "Mesaj...", openScanner: "Tarayıcıyı Aç", myKittens: "Kediciklerim", chats: "Sohbetler", connect: "Bağlan", testSound: "Sesi Dinle", close: "Kapat", placeholderId: "ID Girin...", sendBtn: "Gönder",
+                themes: { beige: "Açık Bej", blue: "Pastel Mavi", mint: "Yumuşak Nane", hitech: "Yüksek Teknoloji Gri", dark: "Gece Karanlığı" },
+                sounds: { meow: "Miyav Sesi", crunch: "Mama Çıtırdatması", hiss: "Tisleme Sss" }
+            },
+            tt: {
+                chat: "Чат", qr: "QR/Сканер", settings: "Көйләүләр", lang: "Интерфейс теле:", theme: "Бизәлеш темасы:", sound: "Билге тавышы:", send: "Хәбәр...", openScanner: "Сканерны ачу", myKittens: "Минем песиләрем", chats: "Чатлар", connect: "Тоташтыру", testSound: "Тавышны тыңлау", close: "Ябу", placeholderId: "ID кертегез...", sendBtn: "Җибәрү",
+                themes: { beige: "Ачык Беж", blue: "Пастель Зәңгәр", mint: "Йомшак Мәнтә", hitech: "Хай-тек соры", dark: "Төнге кара" },
+                sounds: { meow: "Мияу тавышы", crunch: "Ашамлык хрусты", hiss: "Фырлау шшш" }
+            },
+            ar: {
+                chat: "المحادثة", qr: "QR/الماسح", settings: "الإعدادات", lang: "لغة الواجهة:", theme: "المظهر:", sound: "صوت الإشعارات:", send: "رسالة...", openScanner: "فتح الماسح", myKittens: "قططي", chats: "المحادثات", connect: "اتصال", testSound: "استماع للصوت", close: "إغلاق", placeholderId: "أدخل المعرف...", sendBtn: "إرسال",
+                themes: { beige: "بيج فاتح", blue: "أزرق فاتح", mint: "نعناعي هادئ", hitech: "رمادي حديث", dark: "داكن ليلي" },
+                sounds: { meow: "صوت مواء", crunch: "قرمشة الطعام", hiss: "صوت الفحيح" }
+            }
         };
 
         const myId = 'mw-' + Math.random().toString(36).substr(2, 6);
         document.getElementById('my-id-label').innerText = `ID: ${myId}`;
 
+        let currentLang = 'ru';
         let chats = JSON.parse(localStorage.getItem('mw_chats')) || {
             'favorites': { name: 'Мои котятки', messages: [] }
         };
@@ -213,8 +233,15 @@
             for(let id in chats) {
                 let div = document.createElement('div');
                 div.className = `chat-item ${activeChatId === id ? 'active' : ''}`;
-                div.innerHTML = `${id === 'favorites' ? '🐱' : '💬'} <span>${chats[id].name}</span>`;
-                div.onclick = () => { activeChatId = id; toggleDrawer(); renderChatsList(); loadMessages(); };
+                let chatName = id === 'favorites' ? i18n[currentLang].myKittens : chats[id].name;
+                div.innerHTML = `${id === 'favorites' ? '🐱' : '💬'} <span>${chatName}</span>`;
+                div.onclick = () => { 
+                    activeChatId = id; 
+                    toggleDrawer(); 
+                    renderChatsList(); 
+                    loadMessages(); 
+                    switchTab('chat');
+                };
                 container.appendChild(div);
             }
         }
@@ -283,8 +310,8 @@
                         };
                         r.readAsDataURL(blob);
                     };
-                    mediaRecorder.start(); isRecordingAudio = true; alert('Идет запись аудио... Нажмите 🎤 еще раз для отправки.');
-                });
+                    mediaRecorder.start(); isRecordingAudio = true; alert('Запись аудио... Нажмите 🎤 еще раз для отправки.');
+                }).catch(() => alert('Нет доступа к микрофону'));
             } else { mediaRecorder.stop(); isRecordingAudio = false; }
         }
 
@@ -304,9 +331,9 @@
                     stream.getTracks().forEach(t => t.stop());
                 };
                 recorder.start();
-                setTimeout(() => recorder.stop(), 4000); // Запись кошачьего видео 4 секунды
+                setTimeout(() => recorder.stop(), 4000);
                 alert('Запись кошачьего кружочка (4 сек)...');
-            });
+            }).catch(() => alert('Нет доступа к камере'));
         }
 
         function connectPeer() {
@@ -319,7 +346,9 @@
         function saveChats() { localStorage.setItem('mw_chats', JSON.stringify(chats)); }
 
         function changeLanguage(lang) {
+            currentLang = lang;
             let t = i18n[lang] || i18n.ru;
+            
             document.getElementById('tab-chat').innerText = t.chat;
             document.getElementById('tab-qr').innerText = t.qr;
             document.getElementById('tab-settings').innerText = t.settings;
@@ -327,10 +356,26 @@
             document.getElementById('lbl-theme').innerText = t.theme;
             document.getElementById('lbl-sound').innerText = t.sound;
             document.getElementById('msg-input').placeholder = t.send;
+            document.getElementById('peer-id-input').placeholder = t.placeholderId;
+            document.getElementById('btn-send').innerText = t.sendBtn;
             document.getElementById('btn-open-scanner').innerText = t.openScanner;
             document.getElementById('lbl-chats-title').innerText = t.chats;
             document.getElementById('btn-connect').innerText = t.connect;
-            if(chats['favorites']) chats['favorites'].name = t.myKittens;
+            document.getElementById('btn-test-sound').innerText = t.testSound;
+            document.getElementById('btn-close-scanner').innerText = t.close;
+
+            // Перевод тем
+            document.getElementById('opt-t-beige').innerText = t.themes.beige;
+            document.getElementById('opt-t-blue').innerText = t.themes.blue;
+            document.getElementById('opt-t-mint').innerText = t.themes.mint;
+            document.getElementById('opt-t-hitech').innerText = t.themes.hitech;
+            document.getElementById('opt-t-dark').innerText = t.themes.dark;
+
+            // Перевод звуков
+            document.getElementById('opt-s-meow').innerText = t.sounds.meow;
+            document.getElementById('opt-s-crunch').innerText = t.sounds.crunch;
+            document.getElementById('opt-s-hiss').innerText = t.sounds.hiss;
+
             renderChatsList();
             if(lang === 'ar') document.body.classList.add('rtl'); else document.body.classList.remove('rtl');
         }
