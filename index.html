@@ -49,8 +49,9 @@
         #chats-drawer.open { left: 0; }
         .drawer-header { padding: 15px; background: var(--panel); font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
         .drawer-list { flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
-        .chat-item { padding: 10px; border-radius: 10px; background: rgba(0,0,0,0.03); cursor: pointer; display: flex; align-items: center; gap: 10px; }
+        .chat-item { padding: 10px; border-radius: 10px; background: rgba(0,0,0,0.03); cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
         .chat-item.active { background: var(--accent); color: white; }
+        .rename-btn { border: none; background: rgba(0,0,0,0.1); padding: 2px 6px; border-radius: 4px; font-size: 10px; cursor: pointer; color: inherit; }
 
         .view { display: none; flex: 1; flex-direction: column; height: calc(100% - 85px); position: relative; z-index: 1; }
         .view.active { display: flex; }
@@ -84,7 +85,7 @@
         .settings-card { background: var(--card-bg); margin: 15px; padding: 20px; border-radius: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.04); max-width: 500px; width: calc(100% - 30px); align-self: center; }
         .settings-group { margin-bottom: 16px; }
         .settings-group label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 14px; }
-        .settings-group select { width: 100%; padding: 8px; border-radius: 8px; border: 1px solid #ccc; background: var(--bg); color: var(--text); }
+        .settings-group select, .settings-group input { width: 100%; padding: 8px; border-radius: 8px; border: 1px solid #ccc; background: var(--bg); color: var(--text); font-size: 14px; }
         .sound-test-btn { margin-top: 6px; padding: 6px 12px; border: none; background: var(--accent); color: white; border-radius: 6px; cursor: pointer; font-size: 12px; }
 
         #scanner-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; z-index: 500; flex-direction: column; gap: 15px; }
@@ -152,6 +153,13 @@
     <div id="view-settings" class="view">
         <div class="settings-card">
             <div class="settings-group">
+                <label>Ваш постоянный ID (можно изменить):</label>
+                <div style="display:flex; gap:6px;">
+                    <input type="text" id="custom-id-input">
+                    <button onclick="changeMyId()" style="padding:8px 12px; background:var(--accent); color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">Сохранить</button>
+                </div>
+            </div>
+            <div class="settings-group">
                 <label id="lbl-lang">Язык интерфейса:</label>
                 <select id="lang-select" onchange="changeLanguage(this.value)">
                     <option value="ru">Русский</option>
@@ -205,37 +213,40 @@
         let html5QrcodeScanner = null;
         let isRecordingAudio = false, mediaRecorder = null, audioChunks = [];
 
-        // Уникальный короткий ID для каждого открытого окна
-        let myId = sessionStorage.getItem('mw_my_id');
+        // ПОСТОЯННЫЙ ID ДЛЯ БРАУЗЕРА/УСТРОЙСТВА
+        let myId = localStorage.getItem('mw_permanent_id');
         if(!myId) {
             myId = 'cat-' + Math.floor(1000 + Math.random() * 9000);
-            sessionStorage.setItem('mw_my_id', myId);
+            localStorage.setItem('mw_permanent_id', myId);
         }
 
-        document.getElementById('my-id-label').innerText = `Мой ID: ${myId}`;
-        new QRCode(document.getElementById("my-qr"), myId);
+        function updateMyIdUI() {
+            document.getElementById('my-id-label').innerText = `Мой ID: ${myId}`;
+            document.getElementById('custom-id-input').value = myId;
+            document.getElementById("my-qr").innerHTML = "";
+            new QRCode(document.getElementById("my-qr"), myId);
+        }
 
-        // 1. Быстрый канал связей для 2-х вкладок (Local Broadcast)
+        function changeMyId() {
+            let newId = document.getElementById('custom-id-input').value.trim();
+            if(!newId) return;
+            myId = newId;
+            localStorage.setItem('mw_permanent_id', myId);
+            updateMyIdUI();
+            mqttClient.subscribe(`meow_whisper/${myId}`);
+            alert('ID успешно сохранен!');
+        }
+
         const localChannel = new BroadcastChannel('meow_whisper_local');
-
-        // 2. Облачный канал (HiveMQ MQTT) для подключения с разных устройств
         const mqttClient = mqtt.connect('wss://broker.hivemq.com:8884/mqtt');
 
         mqttClient.on('connect', () => {
             mqttClient.subscribe(`meow_whisper/${myId}`);
         });
 
-        // Обработка сообщений из вкладок
-        localChannel.onmessage = (event) => {
-            handleIncomingPacket(event.data);
-        };
-
-        // Обработка сообщений из Интернета (MQTT)
+        localChannel.onmessage = (event) => { handleIncomingPacket(event.data); };
         mqttClient.on('message', (topic, payload) => {
-            try {
-                let data = JSON.parse(payload.toString());
-                handleIncomingPacket(data);
-            } catch(e){}
+            try { handleIncomingPacket(JSON.parse(payload.toString())); } catch(e){}
         });
 
         function handleIncomingPacket(data) {
@@ -244,6 +255,11 @@
                 if(!chats[sender]) {
                     chats[sender] = { name: sender, messages: [] };
                 }
+                
+                // Проверка от дублей
+                let exists = chats[sender].messages.some(m => m.id && m.id === data.msg.id);
+                if(exists) return;
+
                 let msg = { ...data.msg, sent: false, read: false };
                 chats[sender].messages.push(msg);
                 saveChats();
@@ -259,7 +275,7 @@
 
         function copyMyId() {
             navigator.clipboard.writeText(myId).then(() => {
-                alert('ID скопирован в буфер!');
+                alert('ID скопирован!');
             }).catch(() => {
                 let inp = document.createElement('input');
                 inp.value = myId; document.body.appendChild(inp); inp.select();
@@ -274,7 +290,7 @@
             if(partnerId === myId) { alert('Нельзя подключиться к самому себе'); return; }
 
             switchActiveChat(partnerId);
-            alert('Подключено! Теперь вы можете отправлять сообщения.');
+            alert('Подключено! Можете отправлять сообщения.');
         }
 
         function switchActiveChat(id) {
@@ -284,10 +300,23 @@
             renderChatsList();
             loadMessages();
             
-            let title = id === 'favorites' ? i18n[currentLang].myKittens : id;
+            let name = chats[id].name || id;
+            let title = id === 'favorites' ? i18n[currentLang].myKittens : name;
             document.getElementById('chat-target-title').innerText = `Чат: ${title}`;
         }
 
+        function renameChat(id, event) {
+            event.stopPropagation();
+            let newName = prompt('Введите понятное имя для этого контакта:', chats[id].name || id);
+            if(newName && newName.trim() !== '') {
+                chats[id].name = newName.trim();
+                saveChats();
+                renderChatsList();
+                if(activeChatId === id) switchActiveChat(id);
+            }
+        }
+
+        updateMyIdUI();
         renderChatsList();
         loadMessages();
         changeLanguage('tt');
@@ -307,8 +336,17 @@
             for(let id in chats) {
                 let div = document.createElement('div');
                 div.className = `chat-item ${activeChatId === id ? 'active' : ''}`;
-                let chatName = id === 'favorites' ? i18n[currentLang].myKittens : chats[id].name;
-                div.innerHTML = `${id === 'favorites' ? '🐱' : '💬'} <span style="font-size:12px;overflow:hidden;text-overflow:ellipsis;">${chatName}</span>`;
+                let chatName = id === 'favorites' ? i18n[currentLang].myKittens : (chats[id].name || id);
+                
+                let renameBtnHTML = id !== 'favorites' ? `<button class="rename-btn" onclick="renameChat('${id}', event)">✏️</button>` : '';
+                
+                div.innerHTML = `
+                    <div style="display:flex; align-items:center; gap:8px; overflow:hidden;">
+                        <span>${id === 'favorites' ? '🐱' : '💬'}</span>
+                        <span style="font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${chatName}</span>
+                    </div>
+                    ${renameBtnHTML}
+                `;
                 div.onclick = () => { 
                     switchActiveChat(id);
                     toggleDrawer(); 
@@ -346,6 +384,7 @@
         }
 
         function dispatchMessage(m) {
+            m.id = Date.now() + '_' + Math.floor(Math.random() * 10000);
             chats[activeChatId].messages.push(m);
             saveChats(); 
             appendMsgUI(m); 
@@ -353,9 +392,7 @@
 
             if(activeChatId !== 'favorites') {
                 let packet = { sender: myId, target: activeChatId, msg: m };
-                // Отправка во вторую вкладку
                 localChannel.postMessage(packet);
-                // Отправка на другое устройство
                 mqttClient.publish(`meow_whisper/${activeChatId}`, JSON.stringify(packet));
             }
         }
