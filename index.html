@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Meow Whisper</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
@@ -25,7 +25,8 @@
         body.rtl { direction: rtl; }
 
         * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; }
-        body { background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; transition: 0.3s; }
+        html, body { height: 100%; width: 100%; overflow: hidden; }
+        body { background: var(--bg); color: var(--text); display: flex; flex-direction: column; }
 
         .bg-paws {
             position: fixed; inset: 0; opacity: var(--paw-op); pointer-events: none; z-index: 0;
@@ -35,12 +36,12 @@
             background-size: 60px 60px;
         }
 
-        .app-header { background: var(--panel); padding: 10px; display: flex; flex-direction: column; align-items: center; gap: 6px; z-index: 10; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        .brand { display: flex; align-items: center; gap: 8px; font-weight: bold; font-size: 18px; color: var(--accent); }
-        .brand-logo { font-size: 24px; }
+        .app-header { background: var(--panel); padding: 8px; display: flex; flex-direction: column; align-items: center; gap: 6px; z-index: 10; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .brand { display: flex; align-items: center; gap: 8px; font-weight: bold; font-size: 16px; color: var(--accent); }
+        .brand-logo { font-size: 20px; }
         
         .header-tabs { display: flex; width: 100%; gap: 6px; }
-        .tab { flex: 1; padding: 8px; border: none; background: rgba(255,255,255,0.4); cursor: pointer; border-radius: 10px; font-weight: bold; color: var(--text); font-size: 12px; text-align: center; }
+        .tab { flex: 1; padding: 8px 4px; border: none; background: rgba(255,255,255,0.4); cursor: pointer; border-radius: 10px; font-weight: bold; color: var(--text); font-size: 12px; text-align: center; }
         .tab.active { background: var(--accent); color: white; }
 
         #chats-drawer { position: fixed; top: 0; left: -280px; width: 280px; height: 100%; background: var(--card-bg); z-index: 400; box-shadow: 5px 0 15px rgba(0,0,0,0.1); transition: 0.3s ease; display: flex; flex-direction: column; }
@@ -50,29 +51,30 @@
         .chat-item { padding: 10px; border-radius: 10px; background: rgba(0,0,0,0.03); cursor: pointer; display: flex; align-items: center; gap: 10px; }
         .chat-item.active { background: var(--accent); color: white; }
 
-        .view { display: none; flex: 1; flex-direction: column; overflow-y: auto; position: relative; z-index: 1; }
+        .view { display: none; flex: 1; flex-direction: column; height: calc(100% - 85px); position: relative; z-index: 1; }
         .view.active { display: flex; }
 
-        .connect-bar { background: var(--card-bg); padding: 8px 12px; display: flex; gap: 8px; align-items: center; border-bottom: 1px solid rgba(0,0,0,0.05); }
+        .connect-bar { background: var(--card-bg); padding: 8px 12px; display: flex; gap: 6px; align-items: center; border-bottom: 1px solid rgba(0,0,0,0.05); }
         .connect-bar input { flex: 1; padding: 6px 10px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.15); outline: none; font-size: 12px; background: var(--bg); color: var(--text); }
-        .connect-bar button { padding: 6px 12px; border-radius: 8px; border: none; background: var(--accent); color: white; font-weight: bold; cursor: pointer; font-size: 12px; }
+        .connect-bar button { padding: 6px 12px; border-radius: 8px; border: none; background: var(--accent); color: white; font-weight: bold; cursor: pointer; font-size: 12px; white-space: nowrap; }
 
-        #chat-area { flex: 1; padding: 15px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
-        .msg { padding: 10px 14px; background: var(--msg-rec); border-radius: 14px; max-width: 75%; align-self: flex-start; box-shadow: 0 1px 3px rgba(0,0,0,0.08); display: flex; flex-direction: column; gap: 4px; word-break: break-word; }
+        #chat-area { flex: 1; padding: 12px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
+        .msg { padding: 10px 14px; background: var(--msg-rec); border-radius: 14px; max-width: 80%; align-self: flex-start; box-shadow: 0 1px 3px rgba(0,0,0,0.08); display: flex; flex-direction: column; gap: 4px; word-break: break-word; }
         .msg.sent { background: var(--msg-sent); color: #fff; align-self: flex-end; }
         .msg-status { font-size: 11px; opacity: 0.8; align-self: flex-end; cursor: pointer; }
 
         .cat-video-container {
-            width: 150px; height: 150px; position: relative;
+            width: 140px; height: 140px; position: relative;
             clip-path: polygon(20% 0%, 0% 40%, 15% 100%, 85% 100%, 100% 40%, 80% 0%, 50% 20%);
             border-radius: 50%; overflow: hidden; background: #000;
         }
         .cat-video-container video { width: 100%; height: 100%; object-fit: cover; }
 
-        .input-bar { padding: 8px 12px; display: flex; gap: 6px; background: var(--card-bg); align-items: center; border-top: 1px solid rgba(0,0,0,0.05); }
-        .icon-btn { border: none; background: none; font-size: 20px; cursor: pointer; padding: 4px; opacity: 0.8; }
-        .input-bar input[type="text"] { flex: 1; padding: 8px 12px; border-radius: 20px; border: 1px solid rgba(0,0,0,0.1); outline: none; background: var(--bg); color: var(--text); }
-        .send-main-btn { padding: 8px 16px; border-radius: 20px; border: none; background: var(--accent); color: white; font-weight: bold; cursor: pointer; }
+        /* Нижняя панель строго закреплена */
+        .input-bar { padding: 8px; display: flex; gap: 4px; background: var(--card-bg); align-items: center; border-top: 1px solid rgba(0,0,0,0.08); z-index: 20; }
+        .icon-btn { border: none; background: none; font-size: 20px; cursor: pointer; padding: 4px; }
+        .input-bar input[type="text"] { flex: 1; padding: 8px 12px; border-radius: 20px; border: 1px solid rgba(0,0,0,0.15); outline: none; background: var(--bg); color: var(--text); font-size: 14px; }
+        .send-main-btn { padding: 8px 14px; border-radius: 20px; border: none; background: var(--accent); color: white; font-weight: bold; cursor: pointer; font-size: 13px; }
 
         .settings-card { background: var(--card-bg); margin: 15px; padding: 20px; border-radius: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.04); max-width: 500px; width: calc(100% - 30px); align-self: center; }
         .settings-group { margin-bottom: 16px; }
@@ -112,7 +114,7 @@
     <!-- ЧАТ -->
     <div id="view-chat" class="view active">
         <div class="connect-bar">
-            <span id="my-id-label" style="font-size: 12px; font-weight: bold;">ID: mw-xxxx</span>
+            <span id="my-id-label" style="font-size: 11px; font-weight: bold;">ID: mw-xxxx</span>
             <input type="text" id="peer-id-input" placeholder="Введите ID...">
             <button id="btn-connect" onclick="connectPeer()">Соединить</button>
         </div>
@@ -122,7 +124,7 @@
         <div class="input-bar">
             <label class="icon-btn" title="Медиа">📷<input type="file" id="media-input" accept="image/*,video/*" style="display:none" onchange="sendMedia(this)"></label>
             <button class="icon-btn" title="Голосовое" onclick="toggleAudioRecord()">🎤</button>
-            <button class="icon-btn" title="Кошачий кружочек" onclick="toggleCatVideoRecord()">🐱📹</button>
+            <button class="icon-btn" title="Кошачий кружочек" onclick="toggleCatVideoRecord()">🐱</button>
             <input type="text" id="msg-input" placeholder="Сообщение..." onkeypress="if(event.key==='Enter') sendTextMessage()">
             <button class="send-main-btn" id="btn-send" onclick="sendTextMessage()">Отправить</button>
         </div>
@@ -143,35 +145,35 @@
                     <option value="ru">Русский</option>
                     <option value="en">English</option>
                     <option value="tr">Türkçe</option>
-                    <option value="tt">Татарча</option>
+                    <option value="tt" selected>Татарча</option>
                     <option value="ar">العربية</option>
                 </select>
             </div>
             <div class="settings-group">
                 <label id="lbl-theme">Тема оформления:</label>
                 <select id="theme-select" onchange="document.body.className = this.value">
-                    <option value="beige" id="opt-t-beige">Светлый Бежевый</option>
-                    <option value="blue" id="opt-t-blue">Пастельно-голубой</option>
-                    <option value="mint" id="opt-t-mint">Нежный Мятный</option>
-                    <option value="hitech" id="opt-t-hitech">Хай-тек серый</option>
-                    <option value="dark" id="opt-t-dark">Ночной темный</option>
+                    <option value="beige" id="opt-t-beige">Ачык Беж</option>
+                    <option value="blue" id="opt-t-blue">Пастель Зәңгәр</option>
+                    <option value="mint" id="opt-t-mint">Йомшак Мәнтә</option>
+                    <option value="hitech" id="opt-t-hitech">Хай-тек соры</option>
+                    <option value="dark" id="opt-t-dark">Төнге кара</option>
                 </select>
             </div>
             <div class="settings-group">
                 <label id="lbl-sound">Звук уведомлений:</label>
                 <select id="sound-select">
-                    <option value="meow" id="opt-s-meow">Звук Мяу</option>
-                    <option value="crunch" id="opt-s-crunch">Хруст корма</option>
-                    <option value="hiss" id="opt-s-hiss">Шипение шшш</option>
+                    <option value="meow" id="opt-s-meow">Мияу тавышы</option>
+                    <option value="crunch" id="opt-s-crunch">Ашамлык хрусты</option>
+                    <option value="hiss" id="opt-s-hiss">Фырлау шшш</option>
                 </select>
-                <button class="sound-test-btn" id="btn-test-sound" onclick="playSound()">Прослушать звук</button>
+                <button class="sound-test-btn" id="btn-test-sound" onclick="playSound()">Тавышны тыңлау</button>
             </div>
         </div>
     </div>
 
     <div id="scanner-modal">
         <div id="reader"></div>
-        <button id="btn-close-scanner" onclick="stopScanner()" style="padding: 8px 20px; border-radius: 8px; border: none; background: white; font-weight:bold;">Закрыть</button>
+        <button id="btn-close-scanner" onclick="stopScanner()" style="padding: 8px 20px; border-radius: 8px; border: none; background: white; font-weight:bold;">Ябу</button>
     </div>
 
     <script>
@@ -206,9 +208,9 @@
         const myId = 'mw-' + Math.random().toString(36).substr(2, 6);
         document.getElementById('my-id-label').innerText = `ID: ${myId}`;
 
-        let currentLang = 'ru';
+        let currentLang = 'tt';
         let chats = JSON.parse(localStorage.getItem('mw_chats')) || {
-            'favorites': { name: 'Мои котятки', messages: [] }
+            'favorites': { name: 'Минем песиләрем', messages: [] }
         };
         let activeChatId = 'favorites';
         let html5QrcodeScanner = null;
@@ -217,6 +219,7 @@
         setTimeout(() => new QRCode(document.getElementById("my-qr"), myId), 300);
         renderChatsList();
         loadMessages();
+        changeLanguage('tt');
 
         function switchTab(tabName) {
             document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
@@ -310,7 +313,7 @@
                         };
                         r.readAsDataURL(blob);
                     };
-                    mediaRecorder.start(); isRecordingAudio = true; alert('Запись аудио... Нажмите 🎤 еще раз для отправки.');
+                    mediaRecorder.start(); isRecordingAudio = true; alert('Запись аудио...');
                 }).catch(() => alert('Нет доступа к микрофону'));
             } else { mediaRecorder.stop(); isRecordingAudio = false; }
         }
@@ -332,7 +335,7 @@
                 };
                 recorder.start();
                 setTimeout(() => recorder.stop(), 4000);
-                alert('Запись кошачьего кружочка (4 сек)...');
+                alert('Запись кружочка (4 сек)...');
             }).catch(() => alert('Нет доступа к камере'));
         }
 
@@ -364,14 +367,12 @@
             document.getElementById('btn-test-sound').innerText = t.testSound;
             document.getElementById('btn-close-scanner').innerText = t.close;
 
-            // Перевод тем
             document.getElementById('opt-t-beige').innerText = t.themes.beige;
             document.getElementById('opt-t-blue').innerText = t.themes.blue;
             document.getElementById('opt-t-mint').innerText = t.themes.mint;
             document.getElementById('opt-t-hitech').innerText = t.themes.hitech;
             document.getElementById('opt-t-dark').innerText = t.themes.dark;
 
-            // Перевод звуков
             document.getElementById('opt-s-meow').innerText = t.sounds.meow;
             document.getElementById('opt-s-crunch').innerText = t.sounds.crunch;
             document.getElementById('opt-s-hiss').innerText = t.sounds.hiss;
