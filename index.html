@@ -6,7 +6,6 @@
     <title>Meow Whisper</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
-    <!-- Подключаем PeerJS для реальной связи -->
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         :root {
@@ -57,8 +56,10 @@
         .view.active { display: flex; }
 
         .connect-bar { background: var(--card-bg); padding: 8px 12px; display: flex; gap: 6px; align-items: center; border-bottom: 1px solid rgba(0,0,0,0.05); }
-        .connect-bar input { flex: 1; padding: 6px 10px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.15); outline: none; font-size: 12px; background: var(--bg); color: var(--text); }
+        .connect-bar input { flex: 1; padding: 6px 10px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.15); outline: none; font-size: 11px; background: var(--bg); color: var(--text); }
         .connect-bar button { padding: 6px 12px; border-radius: 8px; border: none; background: var(--accent); color: white; font-weight: bold; cursor: pointer; font-size: 12px; white-space: nowrap; }
+
+        .chat-target-banner { background: rgba(0,0,0,0.05); padding: 4px 12px; font-size: 11px; font-weight: bold; text-align: center; color: var(--accent); }
 
         #chat-area { flex: 1; padding: 12px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
         .msg { padding: 10px 14px; background: var(--msg-rec); border-radius: 14px; max-width: 80%; align-self: flex-start; box-shadow: 0 1px 3px rgba(0,0,0,0.08); display: flex; flex-direction: column; gap: 4px; word-break: break-word; }
@@ -115,10 +116,12 @@
     <!-- ЧАТ -->
     <div id="view-chat" class="view active">
         <div class="connect-bar">
-            <span id="my-id-label" style="font-size: 11px; font-weight: bold;">ID: connecting...</span>
+            <span id="my-id-label" style="font-size: 10px; font-weight: bold;">ID: ...</span>
             <input type="text" id="peer-id-input" placeholder="Введите ID...">
             <button id="btn-connect" onclick="connectPeer()">Соединить</button>
         </div>
+        
+        <div class="chat-target-banner" id="chat-target-title">Чат: Минем песиләрем</div>
 
         <div id="chat-area"></div>
 
@@ -214,7 +217,6 @@
         let html5QrcodeScanner = null;
         let isRecordingAudio = false, mediaRecorder = null, audioChunks = [];
 
-        // PeerJS подключение
         let peer = null;
         let connections = {};
         let myId = '';
@@ -223,13 +225,15 @@
             peer = new Peer();
             peer.on('open', id => {
                 myId = id;
-                document.getElementById('my-id-label').innerText = `ID: ${myId}`;
+                document.getElementById('my-id-label').innerText = `ID: ${myId.substring(0, 8)}...`;
                 document.getElementById("my-qr").innerHTML = "";
                 new QRCode(document.getElementById("my-qr"), myId);
             });
 
             peer.on('connection', conn => {
                 setupConnection(conn);
+                // Если пришел входящий звонок/чат, сразу переключаем экран на него
+                switchActiveChat(conn.peer);
             });
         }
 
@@ -260,11 +264,19 @@
             let conn = peer.connect(peerId);
             conn.on('open', () => {
                 setupConnection(conn);
-                activeChatId = peerId;
-                renderChatsList();
-                loadMessages();
-                alert('Тоташу булды! / Подключено!');
+                switchActiveChat(peerId);
             });
+        }
+
+        function switchActiveChat(id) {
+            activeChatId = id;
+            if(!chats[id]) chats[id] = { name: id, messages: [] };
+            saveChats();
+            renderChatsList();
+            loadMessages();
+            
+            let title = id === 'favorites' ? i18n[currentLang].myKittens : id;
+            document.getElementById('chat-target-title').innerText = `Чат: ${title}`;
         }
 
         initPeer();
@@ -288,12 +300,10 @@
                 let div = document.createElement('div');
                 div.className = `chat-item ${activeChatId === id ? 'active' : ''}`;
                 let chatName = id === 'favorites' ? i18n[currentLang].myKittens : chats[id].name;
-                div.innerHTML = `${id === 'favorites' ? '🐱' : '💬'} <span>${chatName}</span>`;
+                div.innerHTML = `${id === 'favorites' ? '🐱' : '💬'} <span style="font-size:12px;overflow:hidden;text-overflow:ellipsis;">${chatName}</span>`;
                 div.onclick = () => { 
-                    activeChatId = id; 
+                    switchActiveChat(id);
                     toggleDrawer(); 
-                    renderChatsList(); 
-                    loadMessages(); 
                     switchTab('chat');
                 };
                 container.appendChild(div);
@@ -333,7 +343,6 @@
             appendMsgUI(m); 
             playSound();
 
-            // Отправляем по сети, если подключены к этому пиру
             if(activeChatId !== 'favorites' && connections[activeChatId]) {
                 connections[activeChatId].send(m);
             }
