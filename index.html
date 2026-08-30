@@ -55,11 +55,14 @@
         .view { display: none; flex: 1; flex-direction: column; height: calc(100% - 85px); position: relative; z-index: 1; }
         .view.active { display: flex; }
 
-        .connect-bar { background: var(--card-bg); padding: 8px 12px; display: flex; gap: 6px; align-items: center; border-bottom: 1px solid rgba(0,0,0,0.05); }
-        .connect-bar input { flex: 1; padding: 6px 10px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.15); outline: none; font-size: 11px; background: var(--bg); color: var(--text); }
-        .connect-bar button { padding: 6px 12px; border-radius: 8px; border: none; background: var(--accent); color: white; font-weight: bold; cursor: pointer; font-size: 12px; white-space: nowrap; }
+        .connect-bar { background: var(--card-bg); padding: 8px 12px; display: flex; flex-direction: column; gap: 6px; border-bottom: 1px solid rgba(0,0,0,0.05); }
+        .id-row { display: flex; justify-content: space-between; align-items: center; font-size: 11px; font-weight: bold; }
+        .copy-btn { border: none; background: rgba(0,0,0,0.08); padding: 2px 8px; border-radius: 6px; cursor: pointer; font-size: 10px; }
+        .input-row { display: flex; gap: 6px; }
+        .connect-bar input { flex: 1; padding: 6px 10px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.15); outline: none; font-size: 12px; background: var(--bg); color: var(--text); }
+        .connect-bar button.conn-btn { padding: 6px 12px; border-radius: 8px; border: none; background: var(--accent); color: white; font-weight: bold; cursor: pointer; font-size: 12px; white-space: nowrap; }
 
-        .chat-target-banner { background: rgba(0,0,0,0.05); padding: 4px 12px; font-size: 11px; font-weight: bold; text-align: center; color: var(--accent); }
+        .chat-target-banner { background: rgba(0,0,0,0.06); padding: 6px 12px; font-size: 12px; font-weight: bold; text-align: center; color: var(--accent); }
 
         #chat-area { flex: 1; padding: 12px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
         .msg { padding: 10px 14px; background: var(--msg-rec); border-radius: 14px; max-width: 80%; align-self: flex-start; box-shadow: 0 1px 3px rgba(0,0,0,0.08); display: flex; flex-direction: column; gap: 4px; word-break: break-word; }
@@ -116,9 +119,14 @@
     <!-- ЧАТ -->
     <div id="view-chat" class="view active">
         <div class="connect-bar">
-            <span id="my-id-label" style="font-size: 10px; font-weight: bold;">ID: ...</span>
-            <input type="text" id="peer-id-input" placeholder="Введите ID...">
-            <button id="btn-connect" onclick="connectPeer()">Соединить</button>
+            <div class="id-row">
+                <span id="my-id-label">Мой ID: соединение...</span>
+                <button class="copy-btn" onclick="copyMyId()">📋 Скопировать ID</button>
+            </div>
+            <div class="input-row">
+                <input type="text" id="peer-id-input" placeholder="Вставьте полный ID собеседника...">
+                <button class="conn-btn" id="btn-connect" onclick="connectPeer()">Тоташтыру</button>
+            </div>
         </div>
         
         <div class="chat-target-banner" id="chat-target-title">Чат: Минем песиләрем</div>
@@ -183,27 +191,27 @@
     <script>
         const i18n = {
             ru: {
-                chat: "Чат", qr: "QR/Сканер", settings: "Настройки", lang: "Язык интерфейса:", theme: "Тема оформления:", sound: "Звук уведомлений:", send: "Сообщение...", openScanner: "Открыть Сканер", myKittens: "Мои котятки", chats: "Чаты", connect: "Соединить", testSound: "Прослушать звук", close: "Закрыть", placeholderId: "Введите ID...", sendBtn: "Отправить",
+                chat: "Чат", qr: "QR/Сканер", settings: "Настройки", lang: "Язык интерфейса:", theme: "Тема оформления:", sound: "Звук уведомлений:", send: "Сообщение...", openScanner: "Открыть Сканер", myKittens: "Мои котятки", chats: "Чаты", connect: "Тоташтыру", testSound: "Прослушать звук", close: "Закрыть", placeholderId: "Вставьте полный ID...", sendBtn: "Отправить",
                 themes: { beige: "Светлый Бежевый", blue: "Пастельно-голубой", mint: "Нежный Мятный", hitech: "Хай-тек серый", dark: "Ночной темный" },
                 sounds: { meow: "Звук Мяу", crunch: "Хруст корма", hiss: "Шипение шшш" }
             },
             en: {
-                chat: "Chat", qr: "QR/Scanner", settings: "Settings", lang: "Interface Language:", theme: "Theme:", sound: "Notification Sound:", send: "Message...", openScanner: "Open Scanner", myKittens: "My Kittens", chats: "Chats", connect: "Connect", testSound: "Listen to sound", close: "Close", placeholderId: "Enter ID...", sendBtn: "Send",
+                chat: "Chat", qr: "QR/Scanner", settings: "Settings", lang: "Interface Language:", theme: "Theme:", sound: "Notification Sound:", send: "Message...", openScanner: "Open Scanner", myKittens: "My Kittens", chats: "Chats", connect: "Connect", testSound: "Listen to sound", close: "Close", placeholderId: "Enter full ID...", sendBtn: "Send",
                 themes: { beige: "Light Beige", blue: "Pastel Blue", mint: "Soft Mint", hitech: "Hi-Tech Grey", dark: "Night Dark" },
                 sounds: { meow: "Meow Sound", crunch: "Food Crunch", hiss: "Hissing Shhh" }
             },
             tr: {
-                chat: "Sohbet", qr: "QR/Tarayıcı", settings: "Ayarlar", lang: "Arayüz Dili:", theme: "Tema:", sound: "Bildirim Sesi:", send: "Mesaj...", openScanner: "Tarayıcıyı Aç", myKittens: "Kediciklerim", chats: "Sohbetler", connect: "Bağlan", testSound: "Sesi Dinle", close: "Kapat", placeholderId: "ID Girin...", sendBtn: "Gönder",
+                chat: "Sohbet", qr: "QR/Tarayıcı", settings: "Ayarlar", lang: "Arayüz Dili:", theme: "Tema:", sound: "Bildirim Sesi:", send: "Mesaj...", openScanner: "Tarayıcıyı Aç", myKittens: "Kediciklerim", chats: "Sohbetler", connect: "Bağlan", testSound: "Sesi Dinle", close: "Kapat", placeholderId: "Tam ID Girin...", sendBtn: "Gönder",
                 themes: { beige: "Açık Bej", blue: "Pastel Mavi", mint: "Yumuşak Nane", hitech: "Yüksek Teknoloji Gri", dark: "Gece Karanlığı" },
                 sounds: { meow: "Miyav Sesi", crunch: "Mama Çıtırdatması", hiss: "Tisleme Sss" }
             },
             tt: {
-                chat: "Чат", qr: "QR/Сканер", settings: "Көйләүләр", lang: "Интерфейс теле:", theme: "Бизәлеш темасы:", sound: "Билге тавышы:", send: "Хәбәр...", openScanner: "Сканерны ачу", myKittens: "Минем песиләрем", chats: "Чатлар", connect: "Тоташтыру", testSound: "Тавышны тыңлау", close: "Ябу", placeholderId: "ID кертегез...", sendBtn: "Җибәрү",
+                chat: "Чат", qr: "QR/Сканер", settings: "Көйләүләр", lang: "Интерфейс теле:", theme: "Бизәлеш темасы:", sound: "Билге тавышы:", send: "Хәбәр...", openScanner: "Сканерны ачу", myKittens: "Минем песиләрем", chats: "Чатлар", connect: "Тоташтыру", testSound: "Тавышны тыңлау", close: "Ябу", placeholderId: "Тоташ ID кертегез...", sendBtn: "Җибәрү",
                 themes: { beige: "Ачык Беж", blue: "Пастель Зәңгәр", mint: "Йомшак Мәнтә", hitech: "Хай-тек соры", dark: "Төнге кара" },
                 sounds: { meow: "Мияу тавышы", crunch: "Ашамлык хрусты", hiss: "Фырлау шшш" }
             },
             ar: {
-                chat: "المحادثة", qr: "QR/الماسح", settings: "الإعدادات", lang: "لغة الواجهة:", theme: "المظهر:", sound: "صوت الإشعارات:", send: "رسالة...", openScanner: "فتح الماسح", myKittens: "قططي", chats: "المحادثات", connect: "اتصال", testSound: "استماع للصوت", close: "إغلاق", placeholderId: "أدخل المعرف...", sendBtn: "إرسال",
+                chat: "المحادثة", qr: "QR/الماسح", settings: "الإعدادات", lang: "لغة الواجهة:", theme: "المظهر:", sound: "صوت الإشعارات:", send: "رسالة...", openScanner: "فتح الماسح", myKittens: "قططي", chats: "المحادثات", connect: "اتصال", testSound: "استماع للصوت", close: "إغلاق", placeholderId: "أدخل المعرف الكامل...", sendBtn: "إرسال",
                 themes: { beige: "بيج فاتح", blue: "أزرق فاتح", mint: "نعناعي هادئ", hitech: "رمادي حديث", dark: "داكن ليلي" },
                 sounds: { meow: "صوت مواء", crunch: "قرمشة الطعام", hiss: "صوت الفحيح" }
             }
@@ -219,21 +227,53 @@
 
         let peer = null;
         let connections = {};
-        let myId = '';
+        let myFullId = '';
 
         function initPeer() {
-            peer = new Peer();
+            // Генерируем короткий понятный префикс
+            let randomCode = Math.floor(1000 + Math.random() * 9000);
+            let customId = 'mw-cat-' + randomCode;
+
+            peer = new Peer(customId);
+
             peer.on('open', id => {
-                myId = id;
-                document.getElementById('my-id-label').innerText = `ID: ${myId.substring(0, 8)}...`;
+                myFullId = id;
+                document.getElementById('my-id-label').innerText = `Мой ID: ${myFullId}`;
                 document.getElementById("my-qr").innerHTML = "";
-                new QRCode(document.getElementById("my-qr"), myId);
+                new QRCode(document.getElementById("my-qr"), myFullId);
+            });
+
+            peer.on('error', err => {
+                // Если сгенерированный ID уже занят, пробуем без фиксированного ID
+                if(err.type === 'unavailable-id') {
+                    peer = new Peer();
+                    peer.on('open', id => {
+                        myFullId = id;
+                        document.getElementById('my-id-label').innerText = `Мой ID: ${myFullId}`;
+                        document.getElementById("my-qr").innerHTML = "";
+                        new QRCode(document.getElementById("my-qr"), myFullId);
+                    });
+                }
             });
 
             peer.on('connection', conn => {
                 setupConnection(conn);
-                // Если пришел входящий звонок/чат, сразу переключаем экран на него
                 switchActiveChat(conn.peer);
+            });
+        }
+
+        function copyMyId() {
+            if(!myFullId) return;
+            navigator.clipboard.writeText(myFullId).then(() => {
+                alert('ID скопирован в буфер обмена!');
+            }).catch(() => {
+                let inp = document.createElement('input');
+                inp.value = myFullId;
+                document.body.appendChild(inp);
+                inp.select();
+                document.execCommand('copy');
+                document.body.removeChild(inp);
+                alert('ID скопирован!');
             });
         }
 
@@ -259,12 +299,24 @@
 
         function connectPeer() {
             let peerId = document.getElementById('peer-id-input').value.trim();
-            if(!peerId || peerId === myId) return;
+            if(!peerId) {
+                alert('Пожалуйста, введите ID собеседника');
+                return;
+            }
+            if(peerId === myFullId) {
+                alert('Нельзя подключиться к самому себе');
+                return;
+            }
             
             let conn = peer.connect(peerId);
             conn.on('open', () => {
                 setupConnection(conn);
                 switchActiveChat(peerId);
+                alert('Соединение установлено!');
+            });
+
+            conn.on('error', err => {
+                alert('Ошибка соединения. Проверьте правильность ID.');
             });
         }
 
