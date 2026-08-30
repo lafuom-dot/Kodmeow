@@ -6,6 +6,8 @@
     <title>Meow Whisper</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
+    <!-- Подключаем PeerJS для реальной связи -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         :root {
             --bg: #f4eae1;
@@ -70,7 +72,6 @@
         }
         .cat-video-container video { width: 100%; height: 100%; object-fit: cover; }
 
-        /* Нижняя панель строго закреплена */
         .input-bar { padding: 8px; display: flex; gap: 4px; background: var(--card-bg); align-items: center; border-top: 1px solid rgba(0,0,0,0.08); z-index: 20; }
         .icon-btn { border: none; background: none; font-size: 20px; cursor: pointer; padding: 4px; }
         .input-bar input[type="text"] { flex: 1; padding: 8px 12px; border-radius: 20px; border: 1px solid rgba(0,0,0,0.15); outline: none; background: var(--bg); color: var(--text); font-size: 14px; }
@@ -114,7 +115,7 @@
     <!-- ЧАТ -->
     <div id="view-chat" class="view active">
         <div class="connect-bar">
-            <span id="my-id-label" style="font-size: 11px; font-weight: bold;">ID: mw-xxxx</span>
+            <span id="my-id-label" style="font-size: 11px; font-weight: bold;">ID: connecting...</span>
             <input type="text" id="peer-id-input" placeholder="Введите ID...">
             <button id="btn-connect" onclick="connectPeer()">Соединить</button>
         </div>
@@ -205,9 +206,6 @@
             }
         };
 
-        const myId = 'mw-' + Math.random().toString(36).substr(2, 6);
-        document.getElementById('my-id-label').innerText = `ID: ${myId}`;
-
         let currentLang = 'tt';
         let chats = JSON.parse(localStorage.getItem('mw_chats')) || {
             'favorites': { name: 'Минем песиләрем', messages: [] }
@@ -216,7 +214,60 @@
         let html5QrcodeScanner = null;
         let isRecordingAudio = false, mediaRecorder = null, audioChunks = [];
 
-        setTimeout(() => new QRCode(document.getElementById("my-qr"), myId), 300);
+        // PeerJS подключение
+        let peer = null;
+        let connections = {};
+        let myId = '';
+
+        function initPeer() {
+            peer = new Peer();
+            peer.on('open', id => {
+                myId = id;
+                document.getElementById('my-id-label').innerText = `ID: ${myId}`;
+                document.getElementById("my-qr").innerHTML = "";
+                new QRCode(document.getElementById("my-qr"), myId);
+            });
+
+            peer.on('connection', conn => {
+                setupConnection(conn);
+            });
+        }
+
+        function setupConnection(conn) {
+            connections[conn.peer] = conn;
+            if(!chats[conn.peer]) {
+                chats[conn.peer] = { name: conn.peer, messages: [] };
+                saveChats();
+                renderChatsList();
+            }
+
+            conn.on('data', data => {
+                let m = { ...data, sent: false, read: false };
+                if(!chats[conn.peer]) chats[conn.peer] = { name: conn.peer, messages: [] };
+                chats[conn.peer].messages.push(m);
+                saveChats();
+                if(activeChatId === conn.peer) {
+                    appendMsgUI(m);
+                }
+                playSound();
+            });
+        }
+
+        function connectPeer() {
+            let peerId = document.getElementById('peer-id-input').value.trim();
+            if(!peerId || peerId === myId) return;
+            
+            let conn = peer.connect(peerId);
+            conn.on('open', () => {
+                setupConnection(conn);
+                activeChatId = peerId;
+                renderChatsList();
+                loadMessages();
+                alert('Тоташу булды! / Подключено!');
+            });
+        }
+
+        initPeer();
         renderChatsList();
         loadMessages();
         changeLanguage('tt');
@@ -276,13 +327,24 @@
             chatArea.scrollTop = chatArea.scrollHeight;
         }
 
+        function dispatchMessage(m) {
+            chats[activeChatId].messages.push(m);
+            saveChats(); 
+            appendMsgUI(m); 
+            playSound();
+
+            // Отправляем по сети, если подключены к этому пиру
+            if(activeChatId !== 'favorites' && connections[activeChatId]) {
+                connections[activeChatId].send(m);
+            }
+        }
+
         function sendTextMessage() {
             let input = document.getElementById('msg-input');
             let txt = input.value.trim();
             if(!txt) return;
             let m = { type: 'text', content: txt, sent: true, read: false };
-            chats[activeChatId].messages.push(m);
-            saveChats(); appendMsgUI(m); playSound();
+            dispatchMessage(m);
             input.value = '';
         }
 
@@ -292,8 +354,7 @@
             let reader = new FileReader();
             reader.onload = function(e) {
                 let m = { type: 'media', content: e.target.result, isVid: file.type.startsWith('video'), sent: true, read: false };
-                chats[activeChatId].messages.push(m);
-                saveChats(); appendMsgUI(m); playSound();
+                dispatchMessage(m);
             };
             reader.readAsDataURL(file);
         }
@@ -309,7 +370,7 @@
                         let r = new FileReader();
                         r.onload = e => {
                             let m = { type: 'audio', content: e.target.result, sent: true, read: false };
-                            chats[activeChatId].messages.push(m); saveChats(); appendMsgUI(m); playSound();
+                            dispatchMessage(m);
                         };
                         r.readAsDataURL(blob);
                     };
@@ -328,7 +389,7 @@
                     let r = new FileReader();
                     r.onload = e => {
                         let m = { type: 'cat-video', content: e.target.result, sent: true, read: false };
-                        chats[activeChatId].messages.push(m); saveChats(); appendMsgUI(m); playSound();
+                        dispatchMessage(m);
                     };
                     r.readAsDataURL(blob);
                     stream.getTracks().forEach(t => t.stop());
@@ -337,13 +398,6 @@
                 setTimeout(() => recorder.stop(), 4000);
                 alert('Запись кружочка (4 сек)...');
             }).catch(() => alert('Нет доступа к камере'));
-        }
-
-        function connectPeer() {
-            let peerId = document.getElementById('peer-id-input').value.trim();
-            if(!peerId) return;
-            if(!chats[peerId]) chats[peerId] = { name: peerId, messages: [] };
-            activeChatId = peerId; saveChats(); renderChatsList(); loadMessages();
         }
 
         function saveChats() { localStorage.setItem('mw_chats', JSON.stringify(chats)); }
