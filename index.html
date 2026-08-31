@@ -2,601 +2,156 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Meow Whisper Chat v8.2</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meow Whisper Chat</title>
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    }
-
     body {
-      background-color: #f4ece4;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f4efe9;
+      color: #4a3b32;
+      margin: 0;
+      padding: 20px;
       display: flex;
       justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      padding: 5px;
-      color: #333;
     }
-
     .app-container {
       width: 100%;
-      max-width: 850px;
-      height: 95vh;
+      max-width: 450px;
       background: #ffffff;
       border-radius: 20px;
-      display: flex;
-      flex-direction: column;
+      padding: 20px;
       box-shadow: 0 8px 24px rgba(0,0,0,0.08);
-      overflow: hidden;
-      position: relative;
     }
-
-    /* Верхняя шапка */
     .header {
-      padding: 10px 12px;
-      background: #fff;
-      border-bottom: 1px solid #f0f0f0;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
+      text-align: center;
+      font-size: 22px;
+      font-weight: bold;
+      margin-bottom: 15px;
     }
-
-    .profile-btn {
-      display: flex;
-      align-items: center;
-      gap: 8px;
+    .card {
       background: #faf6f0;
-      border: 1px solid #d7ccc8;
-      padding: 4px 10px;
-      border-radius: 20px;
-      cursor: pointer;
-    }
-
-    .avatar {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background: #8b5e3c;
-      color: #fff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: bold;
-      font-size: 14px;
-    }
-
-    .user-info {
-      display: flex;
-      flex-direction: column;
-      font-size: 11px;
-    }
-
-    .user-name { font-weight: bold; color: #4a3b32; }
-    .user-id { color: #888; }
-
-    .nav-group {
-      display: flex;
-      gap: 6px;
-    }
-
-    .nav-btn {
-      padding: 8px 12px;
       border-radius: 12px;
+      padding: 15px;
+      margin-bottom: 15px;
+    }
+    .btn {
+      background-color: #8c5a47;
+      color: white;
       border: none;
-      background: #f7f3f0;
+      padding: 10px 16px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: bold;
+      width: 100%;
+      margin-top: 8px;
+    }
+    .btn:active { opacity: 0.9; }
+    .btn-secondary {
+      background-color: #d9c5b2;
       color: #4a3b32;
-      font-size: 13px;
-      font-weight: 500;
-      cursor: pointer;
     }
-
-    .nav-btn.active {
-      background: #8b5e3c;
-      color: #fff;
-    }
-
-    .controls-group {
-      display: flex;
-      gap: 6px;
-      position: relative;
-    }
-
-    .icon-btn {
-      width: 36px;
-      height: 36px;
-      border-radius: 10px;
-      border: none;
-      background: #f5f0eb;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      font-size: 16px;
-    }
-
-    /* Выпадающие меню */
-    .dropdown-menu {
-      position: absolute;
-      top: 110%;
-      right: 0;
-      background: #2d3142;
-      color: #fff;
-      border-radius: 12px;
-      padding: 6px;
-      display: none;
-      flex-direction: column;
-      min-width: 160px;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-      z-index: 1000;
-    }
-
-    .dropdown-menu.show { display: flex; }
-
-    .dropdown-item {
-      padding: 8px 12px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 13px;
-    }
-    .dropdown-item:hover { background: rgba(255,255,255,0.1); }
-
-    /* Поле с адресом комнаты */
-    .room-bar {
-      padding: 8px 12px;
-      background: #faf8f5;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      border-bottom: 1px solid #f0f0f0;
-    }
-
-    .room-input {
-      flex: 1;
-      padding: 8px 12px;
-      border: 1px solid #e0e0e0;
-      border-radius: 10px;
-      outline: none;
-      font-size: 13px;
-    }
-
-    .btn-action {
-      padding: 8px 16px;
-      background: #a07855;
-      color: white;
-      border: none;
-      border-radius: 10px;
-      cursor: pointer;
-      font-size: 13px;
-      font-weight: bold;
-    }
-
-    /* Экраны */
-    .tab-content {
-      display: none;
-      flex: 1;
-      flex-direction: column;
-      overflow: hidden;
-    }
-
-    .tab-content.active { display: flex; }
-
-    /* Область сообщений */
-    .messages-area {
-      flex: 1;
-      padding: 12px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      background-image: radial-gradient(#e5dcd3 1px, transparent 1px);
-      background-size: 16px 16px;
-    }
-
-    .message-bubble {
-      max-width: 75%;
-      padding: 10px 14px;
-      border-radius: 16px;
-      background: #fff;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.04);
-      font-size: 14px;
-      line-height: 1.4;
-    }
-
-    .message-bubble.out {
-      align-self: flex-end;
-      background: #e8f5e9;
-    }
-
-    /* Список чатов */
-    .chat-list {
-      flex: 1;
-      padding: 12px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .chat-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 12px;
-      background: #faf8f5;
-      border-radius: 12px;
-      border: 1px solid #eee;
-      cursor: pointer;
-    }
-
-    .chat-item:hover { background: #f0eaf3; }
-
-    .chat-item-info {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .btn-delete {
-      background: #ff5252;
-      color: #fff;
-      border: none;
-      padding: 6px 10px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 12px;
-    }
-
-    /* Фиксированная нижняя панель */
-    .input-bar {
-      padding: 10px 12px;
-      background: #fff;
-      border-top: 1px solid #f0f0f0;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .chat-input {
-      flex: 1;
-      padding: 10px 14px;
-      border: 1px solid #e0e0e0;
-      border-radius: 20px;
-      outline: none;
-      font-size: 14px;
-    }
-
-    .send-btn {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      background: #a07855;
-      color: white;
-      border: none;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 16px;
-    }
-
-    /* Модальное окно */
+    /* Модальное окно сканера */
     .modal {
       display: none;
-      position: absolute;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.5);
-      z-index: 2000;
-      align-items: center;
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.6);
       justify-content: center;
+      align-items: center;
+      z-index: 1000;
     }
-
-    .modal.show { display: flex; }
-
-    .modal-card {
-      background: #fff;
+    .modal-content {
+      background: white;
       padding: 20px;
       border-radius: 16px;
-      width: 90%;
-      max-width: 320px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
       text-align: center;
+      width: 85%;
+      max-width: 320px;
     }
-
-    /* QR код через паттерн */
-    .qr-box {
-      width: 160px;
-      height: 160px;
-      margin: 0 auto;
-      background: repeating-conic-gradient(#000 0% 25%, #fff 0% 50%) 50% / 20px 20px;
-      border: 8px solid #fff;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    #preview {
+      width: 100%;
+      height: 220px;
+      background: #000;
+      border-radius: 10px;
+      margin-top: 10px;
+      object-fit: cover;
     }
-
-    /* Темы */
-    body.theme-dark .app-container { background: #1e1e1e; color: #fff; }
-    body.theme-dark .header, body.theme-dark .input-bar, body.theme-dark .room-bar { background: #252525; border-color: #333; }
-    body.theme-dark .message-bubble, body.theme-dark .chat-item { background: #333; color: #fff; border-color: #444; }
-    body.theme-dark .chat-input, body.theme-dark .room-input { background: #2c2c2c; color: #fff; border-color: #444; }
   </style>
 </head>
 <body>
 
 <div class="app-container">
-  <!-- Шапка -->
-  <div class="header">
-    <div class="profile-btn" onclick="openProfileModal()">
-      <div class="avatar" id="header-avatar">М</div>
-      <div class="user-info">
-        <span class="user-name" id="header-name">Мыраужан</span>
-        <span class="user-id" id="header-id">ID: 8842</span>
-      </div>
-    </div>
+  <div class="header">🐾 Meow Whisper</div>
 
-    <!-- Переключатели разделов -->
-    <div class="nav-group">
-      <button class="nav-btn active" id="tab-btn-chats" onclick="switchTab('chats')">Чаты</button>
-      <button class="nav-btn" id="tab-btn-notes" onclick="switchTab('notes')">Заметки</button>
-    </div>
-
-    <!-- Управление -->
-    <div class="controls-group">
-      <button class="icon-btn" onclick="openQRModal()" title="QR-код">📷</button>
-      
-      <button class="icon-btn" id="sound-menu-toggle">🔔</button>
-      <div class="dropdown-menu" id="sound-dropdown">
-        <div class="dropdown-item" onclick="setSound('meow')">🐱 Мяуканье</div>
-        <div class="dropdown-item" onclick="setSound('purr')">🐾 Мурчание</div>
-        <div class="dropdown-item" onclick="setSound('mute')">🔇 Без звука</div>
-      </div>
-
-      <button class="nav-btn" id="lang-toggle">RU ▾</button>
-      <div class="dropdown-menu" id="lang-dropdown">
-        <div class="dropdown-item" onclick="setLanguage('RU')">Русский (RU)</div>
-        <div class="dropdown-item" onclick="setLanguage('TT')">Татарча (TT)</div>
-      </div>
-
-      <button class="icon-btn" id="theme-menu-toggle">🎨</button>
-      <div class="dropdown-menu" id="theme-dropdown">
-        <div class="dropdown-item" onclick="setTheme('beige')" id="th-beige">Бежевый</div>
-        <div class="dropdown-item" onclick="setTheme('pastel')" id="th-pastel">Пастельно-голубой</div>
-        <div class="dropdown-item" onclick="setTheme('mint')" id="th-mint">Мятный</div>
-        <div class="dropdown-item" onclick="setTheme('dark')" id="th-dark">Темный лес</div>
-      </div>
-    </div>
+  <div class="card">
+    <div>Мой ID: <strong id="my-id">mw-8842</strong></div>
+    <button class="btn" onclick="copyInviteLink()">📋 Скопировать ссылку для друга</button>
+    <button class="btn btn-secondary" onclick="openScanner()">📷 Открыть сканер QR</button>
   </div>
 
-  <!-- Адрес комнаты / ID чата -->
-  <div class="room-bar">
-    <span style="font-size: 12px; color: #777;" id="lbl-chat">Чат:</span>
-    <input type="text" class="room-input" value="mw-1234" id="room-id">
-    <button class="btn-action" id="btn-enter">Войти</button>
-  </div>
-
-  <!-- РАЗДЕЛ 1: СПИСОК ЧАТОВ И ОПЕРАТИВНЫЙ ЧАТ -->
-  <div class="tab-content active" id="tab-chats">
-    <div class="chat-list" id="chat-list-container">
-      <div class="chat-item" onclick="openRoom('mw-1234')">
-        <div class="chat-item-info">
-          <div class="avatar">📈</div>
-          <div>
-            <strong>Трейдер (mw-1234)</strong>
-            <div style="font-size:12px; color:#777;">Последнее сообщение...</div>
-          </div>
-        </div>
-        <button class="btn-delete" onclick="deleteChat(event, this)">Удалить</button>
-      </div>
-
-      <div class="chat-item" onclick="openRoom('mw-5678')">
-        <div class="chat-item-info">
-          <div class="avatar">💬</div>
-          <div>
-            <strong>Общий чат (mw-5678)</strong>
-            <div style="font-size:12px; color:#777;">Привет всем!</div>
-          </div>
-        </div>
-        <button class="btn-delete" onclick="deleteChat(event, this)">Удалить</button>
-      </div>
-    </div>
-
-    <!-- Диалог сообщений внутри выбранного чата -->
-    <div class="messages-area" id="messages-container" style="display:none;">
-      <div class="message-bubble">Привет! Начнем обсуждение?</div>
-      <div class="message-bubble out">Да, всё готово!</div>
-    </div>
-  </div>
-
-  <!-- РАЗДЕЛ 2: ЗАМЕТКИ -->
-  <div class="tab-content" id="tab-notes">
-    <div class="messages-area" id="notes-container">
-      <div class="message-bubble">Моя первая заметка...</div>
-    </div>
-  </div>
-
-  <!-- ЕДИНАЯ НИЖНЯЯ ПАНЕЛЬ ВВОДА (Всегда видна) -->
-  <div class="input-bar">
-    <button class="icon-btn" title="Картинка" onclick="triggerFileUpload()">🖼️</button>
-    <input type="file" id="file-input" accept="image/*" style="display:none" onchange="uploadFile(event)">
-    <input type="text" class="chat-input" placeholder="Напишите сообщение..." id="msg-input" onkeydown="if(event.key==='Enter') sendMessage()">
-    <button class="send-btn" onclick="sendMessage()">➔</button>
+  <div id="status" style="text-align:center; font-size: 14px; color: #7a6b60;">
+    Готов к подключению
   </div>
 </div>
 
-<!-- Модальное окно редактирования Профиля -->
-<div class="modal" id="profile-modal">
-  <div class="modal-card">
-    <h3 id="modal-profile-title">Редактировать профиль</h3>
-    <input type="text" id="input-username" class="room-input" value="Мыраужан">
-    <button class="btn-action" onclick="saveProfile()" id="btn-save-profile">Сохранить</button>
-    <button class="nav-btn" onclick="closeModals()" id="btn-close-profile">Отмена</button>
-  </div>
-</div>
-
-<!-- Модальное окно QR-кода -->
-<div class="modal" id="qr-modal">
-  <div class="modal-card">
-    <h3>QR-код профиля</h3>
-    <div class="qr-box"></div>
-    <p style="font-size: 12px; color: #666;" id="qr-desc">Сканируйте для подключения</p>
-    <button class="btn-action" onclick="closeModals()">ОК</button>
+<!-- Модальное окно для QR-сканера -->
+<div id="qr-modal" class="modal">
+  <div class="modal-content">
+    <h3>Сканер QR-кода</h3>
+    <video id="preview" autoplay playsinline></video>
+    <button class="btn btn-secondary" onclick="closeScanner()" style="margin-top:12px;">Закрыть</button>
   </div>
 </div>
 
 <script>
-  let currentLang = 'RU';
-  let activeTab = 'chats';
+  // 1. Генерация ссылки собеседнику
+  const myId = "mw-" + Math.floor(1000 + Math.random() * 9000);
+  document.getElementById('my-id').innerText = myId;
 
-  // Переключение вкладок (Чаты / Заметки)
-  function switchTab(tabName) {
-    activeTab = tabName;
-    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-    document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
-
-    document.getElementById('tab-' + tabName).classList.add('active');
-    document.getElementById('tab-btn-' + tabName).classList.add('active');
-  }
-
-  // Открытие конкретной комнаты чата
-  function openRoom(roomId) {
-    document.getElementById('room-id').value = roomId;
-    document.getElementById('chat-list-container').style.display = 'none';
-    document.getElementById('messages-container').style.display = 'flex';
-  }
-
-  // Удаление чата из списка
-  function deleteChat(e, btn) {
-    e.stopPropagation();
-    const item = btn.closest('.chat-item');
-    if (confirm(currentLang === 'RU' ? 'Удалить этот чат?' : 'Бу чатны бетерергәме?')) {
-      item.remove();
-    }
-  }
-
-  // Отправка сообщений
-  function sendMessage() {
-    const input = document.getElementById('msg-input');
-    if (!input.value.trim()) return;
-
-    const targetContainer = activeTab === 'notes' ? 
-      document.getElementById('notes-container') : 
-      document.getElementById('messages-container');
-
-    // Если список чатов открыт, переключаем на сообщения
-    if (activeTab === 'chats' && document.getElementById('messages-container').style.display === 'none') {
-      document.getElementById('chat-list-container').style.display = 'none';
-      document.getElementById('messages-container').style.display = 'flex';
-    }
-
-    const msg = document.createElement('div');
-    msg.className = 'message-bubble out';
-    msg.innerText = input.value;
-    targetContainer.appendChild(msg);
-
-    input.value = '';
-    msg.scrollIntoView({ behavior: 'smooth' });
-  }
-
-  // Загрузка фото
-  function triggerFileUpload() { document.getElementById('file-input').click(); }
-  function uploadFile(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = function(event) {
-      const targetContainer = activeTab === 'notes' ? 
-        document.getElementById('notes-container') : 
-        document.getElementById('messages-container');
-
-      const msg = document.createElement('div');
-      msg.className = 'message-bubble out';
-      msg.innerHTML = `<img src="${event.target.result}" style="max-width:100%; border-radius:10px;">`;
-      targetContainer.appendChild(msg);
-      msg.scrollIntoView({ behavior: 'smooth' });
-    };
-    reader.readAsDataURL(file);
-  }
-
-  // Модальные окна
-  function openProfileModal() { document.getElementById('profile-modal').classList.add('show'); }
-  function openQRModal() { document.getElementById('qr-modal').classList.add('show'); }
-  function closeModals() { document.querySelectorAll('.modal').forEach(m => m.classList.remove('show')); }
-
-  function saveProfile() {
-    const val = document.getElementById('input-username').value;
-    if (val.trim()) {
-      document.getElementById('header-name').innerText = val;
-      document.getElementById('header-avatar').innerText = val[0].toUpperCase();
-    }
-    closeModals();
-  }
-
-  // Выпадающие меню
-  document.getElementById('lang-toggle').onclick = (e) => { e.stopPropagation(); toggleDropdown('lang-dropdown'); };
-  document.getElementById('theme-menu-toggle').onclick = (e) => { e.stopPropagation(); toggleDropdown('theme-dropdown'); };
-  document.getElementById('sound-menu-toggle').onclick = (e) => { e.stopPropagation(); toggleDropdown('sound-dropdown'); };
-
-  function toggleDropdown(id) {
-    document.querySelectorAll('.dropdown-menu').forEach(m => {
-      if (m.id !== id) m.classList.remove('show');
+  function copyInviteLink() {
+    // Формируем ссылку с ID вашей комнаты
+    const inviteUrl = window.location.origin + window.location.pathname + '?room=' + myId;
+    
+    navigator.clipboard.writeText(inviteUrl).then(() => {
+      alert("Ссылка скопирована! Отправьте её собеседнику:\n" + inviteUrl);
+    }).catch(() => {
+      prompt("Скопируйте ссылку вручную:", inviteUrl);
     });
-    document.getElementById(id).classList.toggle('show');
   }
 
-  document.addEventListener('click', () => {
-    document.querySelectorAll('.dropdown-menu').forEach(m => m.classList.remove('show'));
-  });
+  // Проверка: перешел ли собеседник по ссылке
+  const urlParams = new URLSearchParams(window.location.search);
+  const targetRoom = urlParams.get('room');
+  if (targetRoom) {
+    document.getElementById('status').innerText = "Подключение к комнате: " + targetRoom;
+  }
 
-  // Локализация (Без смешивания языков)
-  const dict = {
-    RU: {
-      chats: "Чаты", notes: "Заметки", enter: "Войти",
-      placeholder: "Напишите сообщение...", chatLbl: "Чат:",
-      thBeige: "Бежевый", thPastel: "Пастельно-голубой", thMint: "Мятный", thDark: "Темный лес",
-      profTitle: "Редактировать профиль", save: "Сохранить", cancel: "Отмена", qrDesc: "Сканируйте для подключения"
-    },
-    TT: {
-      chats: "Чатлар", notes: "Язмалар", enter: "Керү",
-      placeholder: "Хәбәр языгыз...", chatLbl: "Чат:",
-      thBeige: "аксыл-көрән", thPastel: "ачык күк", thMint: "бөтнек", thDark: "кара урман",
-      profTitle: "Профильгә үзгәрешләр кертегез", save: "Саклау", cancel: "Баш тарту", qrDesc: "Сканерлагыз чатка керү өчен"
+  // 2. Встроенная работа с камерой (Сканер)
+  let videoStream = null;
+
+  async function openScanner() {
+    const modal = document.getElementById('qr-modal');
+    const video = document.getElementById('preview');
+    modal.style.display = 'flex';
+
+    try {
+      // Запуск камеры устройства
+      videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+      video.srcObject = videoStream;
+    } catch (err) {
+      alert("Не удалось открыть камеру. Убедитесь, что дали разрешение на доступ к камере в браузере.");
+      closeScanner();
     }
-  };
-
-  function setLanguage(lang) {
-    currentLang = lang;
-    document.getElementById('lang-toggle').innerText = lang + ' ▾';
-    const d = dict[lang];
-
-    document.getElementById('tab-btn-chats').innerText = d.chats;
-    document.getElementById('tab-btn-notes').innerText = d.notes;
-    document.getElementById('btn-enter').innerText = d.enter;
-    document.getElementById('msg-input').placeholder = d.placeholder;
-    document.getElementById('lbl-chat').innerText = d.chatLbl;
-
-    document.getElementById('th-beige').innerText = d.thBeige;
-    document.getElementById('th-pastel').innerText = d.thPastel;
-    document.getElementById('th-mint').innerText = d.thMint;
-    document.getElementById('th-dark').innerText = d.thDark;
-
-    document.getElementById('modal-profile-title').innerText = d.profTitle;
-    document.getElementById('btn-save-profile').innerText = d.save;
-    document.getElementById('btn-close-profile').innerText = d.cancel;
-    document.getElementById('qr-desc').innerText = d.qrDesc;
   }
 
-  function setTheme(theme) {
-    document.body.className = '';
-    if (theme === 'dark') document.body.classList.add('theme-dark');
+  function closeScanner() {
+    const modal = document.getElementById('qr-modal');
+    if (videoStream) {
+      videoStream.getTracks().forEach(track => track.stop());
+    }
+    modal.style.display = 'none';
   }
-
-  function setSound(type) {}
 </script>
+
 </body>
 </html>
