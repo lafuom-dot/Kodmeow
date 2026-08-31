@@ -40,7 +40,6 @@
     nav button { flex: 1; padding: 12px; border: none; background: none; color: var(--text-color); font-weight: bold; cursor: pointer; }
     nav button.active { background: rgba(255,255,255,0.2); border-bottom: 3px solid var(--text-color); }
 
-    /* ГЛАВНОЕ ИСПРАВЛЕНИЕ СКРЫТИЯ ВКЛАДОК */
     .tab-content { flex: 1; display: none !important; position: relative; overflow-y: auto; }
     .tab-content.active { display: flex !important; flex-direction: column; }
 
@@ -60,7 +59,7 @@
     .btn-icon { background: none; border: none; font-size: 1.2em; cursor: pointer; }
 
     .setting-group { background: rgba(255,255,255,0.25); padding: 12px; border-radius: 10px; margin: 10px; }
-    select { width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #ccc; margin-top: 5px; }
+    select, input[type="password"] { width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #ccc; margin-top: 5px; }
 
     #tab-qr { padding: 20px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 15px; }
     #reader { width: 100%; max-width: 300px; }
@@ -71,24 +70,25 @@
   <div id="app-container">
     <header>
       <div class="profile-info">
-        <img src="https://via.placeholder.com/40?text=Meow" class="avatar">
-        <div id="user-id" class="user-id-badge">ID: Mw....</div>
+        <input type="file" id="avatar-file" accept="image/*" style="display:none" onchange="loadAvatar(event)">
+        <img src="https://via.placeholder.com/40?text=Meow" id="avatar-img" class="avatar" onclick="document.getElementById('avatar-file').click()">
+        <div id="user-id" class="user-id-badge">ID: mw-....</div>
       </div>
       <button class="btn-icon" onclick="connectPrompt()">➕</button>
     </header>
 
     <nav>
-      <button id="nav-chats" class="active" onclick="switchTab('chats')">Чатлар / Чаты</button>
+      <button id="nav-chats" class="active" onclick="switchTab('chats')">Чаты</button>
       <button id="nav-qr" onclick="switchTab('qr')">QR-Код</button>
-      <button id="nav-settings" onclick="switchTab('settings')">Көйләүләр</button>
+      <button id="nav-settings" onclick="switchTab('settings')">Настройки</button>
     </nav>
 
     <!-- ВКЛАДКА 1: ЧАТЫ -->
     <div id="tab-chats" class="tab-content active">
       <div id="chat-list-view" style="flex:1; overflow-y:auto;">
         <div class="chat-list-item" onclick="openChat('notes')">
-          <strong>🐾 Минем пешиләрем</strong>
-          <div style="font-size: 0.8em; opacity: 0.7;">Личный блокнот</div>
+          <strong id="txt-notes-title">🐾 Мои котята</strong>
+          <div style="font-size: 0.8em; opacity: 0.7;" id="txt-notes-sub">Личный блокнот</div>
         </div>
         <div id="dynamic-chat-list"></div>
       </div>
@@ -109,17 +109,17 @@
 
     <!-- ВКЛАДКА 2: QR-КОД -->
     <div id="tab-qr" class="tab-content">
-      <h3>Сезнең QR-код / Ваш QR-код</h3>
+      <h3 id="txt-qr-title">Ваш QR-код</h3>
       <div id="qrcode"></div>
-      <button onclick="toggleScanner()" style="padding: 10px; border-radius: 5px; border:none; background:var(--accent-color); cursor:pointer;">Сканерны Ачу/Ябу</button>
+      <button onclick="toggleScanner()" style="padding: 10px; border-radius: 5px; border:none; background:var(--accent-color); cursor:pointer;" id="txt-btn-scan">Открыть/Закрыть Сканер</button>
       <div id="reader"></div>
     </div>
 
     <!-- ВКЛАДКА 3: НАСТРОЙКИ -->
     <div id="tab-settings" class="tab-content">
       <div class="setting-group">
-        <h4>Цветовая тема</h4>
-        <select onchange="document.body.className = 'theme-' + this.value">
+        <h4 id="lbl-theme">Цветовая тема</h4>
+        <select id="theme-select" onchange="changeTheme(this.value)">
           <option value="tea">Чай с молоком</option>
           <option value="mint">Мятный</option>
           <option value="sky">Голубое небо</option>
@@ -128,11 +128,37 @@
           <option value="forest">Тёмный лес</option>
         </select>
       </div>
+
+      <div class="setting-group">
+        <h4 id="lbl-lang">Язык / Language</h4>
+        <select id="lang-select" onchange="changeLanguage(this.value)">
+          <option value="ru">Русский</option>
+          <option value="tt">Татарча</option>
+          <option value="en">English</option>
+          <option value="tr">Türkçe</option>
+          <option value="ar">العربية</option>
+        </select>
+      </div>
+
+      <div class="setting-group">
+        <h4 id="lbl-sound">Звуковой эффект</h4>
+        <select id="sound-select">
+          <option value="meow">Звук мяу</option>
+          <option value="crunch">Звук хруст корма</option>
+          <option value="hiss">Звук кошачьего шипенья</option>
+        </select>
+      </div>
+
+      <div class="setting-group">
+        <h4 id="lbl-pass">Пароль для блокнота</h4>
+        <input type="password" id="notes-pass-input" placeholder="Введите пароль">
+        <button onclick="saveNotesPassword()" style="margin-top:5px; padding:5px 10px;" id="btn-save-pass">Сохранить</button>
+      </div>
     </div>
   </div>
 
   <script>
-    // Вставленный URL Firebase базы:
+    // ИНИЦИАЛИЗАЦИЯ FIREBASE
     const firebaseConfig = {
       databaseURL: "https://meowchat-40d99-default-rtdb.europe-west1.firebasedatabase.app"
     };
@@ -140,14 +166,58 @@
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    let myId = localStorage.getItem('mw_user_id') || ("Mw" + Math.floor(1000 + Math.random() * 9000));
+    // Генерация ID с префиксом mw-
+    let myId = localStorage.getItem('mw_user_id') || ("mw-" + Math.floor(1000 + Math.random() * 9000));
     localStorage.setItem('mw_user_id', myId);
+
     let activeChatId = null;
     let html5QrcodeScanner = null;
+
+    const translations = {
+      ru: {
+        navChats: "Чаты", navQr: "QR-Код", navSettings: "Настройки",
+        notesTitle: "🐾 Мои котята", notesSub: "Личный блокнот",
+        qrTitle: "Ваш QR-код", btnScan: "Открыть/Закрыть Сканер",
+        lblTheme: "Цветовая тема", lblLang: "Язык / Language",
+        lblSound: "Звуковой эффект", lblPass: "Пароль для блокнота", btnSavePass: "Сохранить"
+      },
+      tt: {
+        navChats: "Чатлар", navQr: "QR-Код", navSettings: "Көйләүләр",
+        notesTitle: "🐾 Минем пешиләрем", notesSub: "Шәхси блокнот",
+        qrTitle: "Сезнең QR-код", btnScan: "Сканерны Ачу/Ябу",
+        lblTheme: "Төс темасы", lblLang: "Тел / Language",
+        lblSound: "Тавыш эффекты", lblPass: "Блокнот өчен пароль", btnSavePass: "Саклау"
+      },
+      en: {
+        navChats: "Chats", navQr: "QR-Code", navSettings: "Settings",
+        notesTitle: "🐾 My Kittens", notesSub: "Personal notepad",
+        qrTitle: "Your QR-Code", btnScan: "Open/Close Scanner",
+        lblTheme: "Color Theme", lblLang: "Language",
+        lblSound: "Sound Effect", lblPass: "Notepad Password", btnSavePass: "Save"
+      },
+      tr: {
+        navChats: "Sohbetler", navQr: "QR-Kodu", navSettings: "Ayarlar",
+        notesTitle: "🐾 Kedilerim", notesSub: "Kişisel not defteri",
+        qrTitle: "QR Kodunuz", btnScan: "Tarayıcıyı Aç/Kapat",
+        lblTheme: "Renk Teması", lblLang: "Dil / Language",
+        lblSound: "Ses Efekti", lblPass: "Not Defteri Şifresi", btnSavePass: "Kaydet"
+      },
+      ar: {
+        navChats: "المحادثات", navQr: "رمز QR", navSettings: "الإعدادات",
+        notesTitle: "🐾 قططي", notesSub: "دفتر الملاحظات",
+        qrTitle: "رمز QR الخاص بك", btnScan: "فتح/إغلاق الماسح الضوئي",
+        lblTheme: "سمة اللون", lblLang: "اللغة",
+        lblSound: "Тأثير الصوتي", lblPass: "كلمة سر دفتر الملاحظات", btnSavePass: "حفظ"
+      }
+    };
 
     window.onload = () => {
       document.getElementById('user-id').innerText = "ID: " + myId;
       new QRCode(document.getElementById("qrcode"), { text: myId, width: 128, height: 128 });
+      
+      let savedAvatar = localStorage.getItem('mw_avatar');
+      if (savedAvatar) document.getElementById('avatar-img').src = savedAvatar;
+
       listenForActiveChats();
     };
 
@@ -163,17 +233,28 @@
     }
 
     function connectPrompt(targetId) {
-      let peerId = targetId || prompt("Введите ID собеседника (напр. Mw5339):");
-      if (peerId && peerId !== myId) {
-        openChat(peerId);
+      let peerId = targetId || prompt("Введите ID собеседника (напр. mw-1234):");
+      if (peerId) {
+        peerId = peerId.trim().toLowerCase();
+        if (peerId !== myId) openChat(peerId);
       }
     }
 
     function openChat(id) {
+      if (id === 'notes') {
+        let pass = localStorage.getItem('mw_notes_pass');
+        if (pass) {
+          let check = prompt("Введите пароль от блокнота:");
+          if (check !== pass) { alert("Неверный пароль!"); return; }
+        }
+      }
+
       activeChatId = id;
       document.getElementById('chat-list-view').style.display = 'none';
       document.getElementById('chat-room').style.display = 'flex';
-      document.getElementById('chat-title').innerText = (id === 'notes') ? "🐾 Минем пешиләрем" : id;
+      
+      let currentLang = document.getElementById('lang-select').value || 'ru';
+      document.getElementById('chat-title').innerText = (id === 'notes') ? translations[currentLang].notesTitle : id;
       
       let container = document.getElementById('chat-messages');
       container.innerHTML = '';
@@ -204,6 +285,8 @@
       let input = document.getElementById('msg-input');
       let text = input.value.trim();
       if (!text || !activeChatId) return;
+
+      playChatSound();
 
       if (activeChatId === 'notes') {
         let saved = JSON.parse(localStorage.getItem('mw_notes') || '[]');
@@ -251,13 +334,77 @@
       });
     }
 
+    function loadAvatar(event) {
+      let reader = new FileReader();
+      reader.onload = () => {
+        document.getElementById('avatar-img').src = reader.result;
+        localStorage.setItem('mw_avatar', reader.result);
+      };
+      reader.readAsDataURL(event.target.files[0]);
+    }
+
+    function changeTheme(theme) {
+      document.body.className = 'theme-' + theme;
+    }
+
+    function changeLanguage(lang) {
+      let t = translations[lang] || translations.ru;
+      document.getElementById('nav-chats').innerText = t.navChats;
+      document.getElementById('nav-qr').innerText = t.navQr;
+      document.getElementById('nav-settings').innerText = t.navSettings;
+      document.getElementById('txt-notes-title').innerText = t.notesTitle;
+      document.getElementById('txt-notes-sub').innerText = t.notesSub;
+      document.getElementById('txt-qr-title').innerText = t.qrTitle;
+      document.getElementById('txt-btn-scan').innerText = t.btnScan;
+      document.getElementById('lbl-theme').innerText = t.lblTheme;
+      document.getElementById('lbl-lang').innerText = t.lblLang;
+      document.getElementById('lbl-sound').innerText = t.lblSound;
+      document.getElementById('lbl-pass').innerText = t.lblPass;
+      document.getElementById('btn-save-pass').innerText = t.btnSavePass;
+    }
+
+    function playChatSound() {
+      let ctx = new (window.AudioContext || window.webkitAudioContext)();
+      let osc = ctx.createOscillator();
+      let gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      
+      let soundType = document.getElementById('sound-select').value;
+      if (soundType === 'meow') {
+        osc.frequency.setValueAtTime(600, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(300, ctx.currentTime + 0.15);
+      } else if (soundType === 'crunch') {
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(150, ctx.currentTime);
+      } else {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(800, ctx.currentTime);
+      }
+      
+      gain.gain.setValueAtTime(0.1, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.15);
+    }
+
+    function saveNotesPassword() {
+      let pass = document.getElementById('notes-pass-input').value;
+      localStorage.setItem('mw_notes_pass', pass);
+      alert("Пароль сохранен!");
+    }
+
     function toggleScanner() {
-      if (html5QrcodeScanner) { html5QrcodeScanner.clear(); html5QrcodeScanner = null; } 
-      else {
+      if (html5QrcodeScanner) { 
+        html5QrcodeScanner.clear(); 
+        html5QrcodeScanner = null; 
+      } else {
         html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 });
         html5QrcodeScanner.render((decodedText) => {
-          html5QrcodeScanner.clear(); html5QrcodeScanner = null;
-          connectPrompt(decodedText); switchTab('chats');
+          html5QrcodeScanner.clear(); 
+          html5QrcodeScanner = null;
+          connectPrompt(decodedText); 
+          switchTab('chats');
         });
       }
     }
