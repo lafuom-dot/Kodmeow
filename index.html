@@ -3,155 +3,319 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Meow Whisper Chat</title>
+  <title>Meow Whisper Messenger</title>
+  
+  <!-- Подключаем SDK Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  
+  <!-- Подключаем библиотека QR-сканера -->
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
   <style>
+    :root {
+      --bg-color: #f4efe9;
+      --card-bg: #ffffff;
+      --accent: #8c5a47;
+      --accent-light: #d9c5b2;
+      --text: #4a3b32;
+    }
+
+    body.theme-mint {
+      --bg-color: #e8f5e9;
+      --card-bg: #ffffff;
+      --accent: #388e3c;
+      --accent-light: #c8e6c9;
+      --text: #1b5e20;
+    }
+
+    body.theme-hitech {
+      --bg-color: #1e1e24;
+      --card-bg: #2b2d42;
+      --accent: #4cc9f0;
+      --accent-light: #4895ef;
+      --text: #edf2f4;
+    }
+
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: #f4efe9;
-      color: #4a3b32;
-      margin: 0;
-      padding: 20px;
-      display: flex;
-      justify-content: center;
+      background-color: var(--bg-color);
+      color: var(--text);
+      margin: 0; padding: 15px;
+      display: flex; justify-content: center;
+      background-image: radial-gradient(var(--accent-light) 10%, transparent 11%);
+      background-size: 20px 20px;
     }
+
     .app-container {
-      width: 100%;
-      max-width: 450px;
-      background: #ffffff;
-      border-radius: 20px;
-      padding: 20px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+      width: 100%; max-width: 480px;
+      background: var(--card-bg);
+      border-radius: 20px; padding: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+      box-sizing: border-box;
     }
+
     .header {
-      text-align: center;
-      font-size: 22px;
-      font-weight: bold;
-      margin-bottom: 15px;
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 15px; border-bottom: 2px solid var(--accent-light); padding-bottom: 10px;
     }
-    .card {
-      background: #faf6f0;
-      border-radius: 12px;
-      padding: 15px;
-      margin-bottom: 15px;
+
+    .title { font-size: 20px; font-weight: bold; }
+    .controls-row { display: flex; gap: 8px; margin-bottom: 12px; }
+
+    select, button, input, textarea {
+      font-family: inherit;
+      border-radius: 8px; border: 1px solid var(--accent-light);
+      padding: 8px 12px; outline: none;
     }
+
     .btn {
-      background-color: #8c5a47;
-      color: white;
-      border: none;
-      padding: 10px 16px;
-      border-radius: 10px;
-      cursor: pointer;
-      font-weight: bold;
-      width: 100%;
-      margin-top: 8px;
+      background-color: var(--accent); color: white;
+      border: none; cursor: pointer; font-weight: bold; width: 100%;
+      margin-top: 5px; transition: 0.2s;
     }
-    .btn:active { opacity: 0.9; }
-    .btn-secondary {
-      background-color: #d9c5b2;
-      color: #4a3b32;
+    .btn:active { opacity: 0.8; }
+    .btn-sub { background-color: var(--accent-light); color: var(--text); }
+
+    .chat-box {
+      height: 240px; border: 1px solid var(--accent-light);
+      border-radius: 12px; padding: 10px; overflow-y: auto;
+      background: rgba(255,255,255,0.5); margin: 10px 0;
+      display: flex; flex-direction: column; gap: 8px;
     }
-    /* Модальное окно сканера */
+
+    .msg {
+      padding: 8px 12px; border-radius: 12px; max-width: 75%;
+      word-wrap: break-word; font-size: 14px;
+    }
+    .msg.my { background: var(--accent); color: white; align-self: flex-end; }
+    .msg.peer { background: var(--accent-light); color: var(--text); align-self: flex-start; }
+
+    .tabs { display: flex; gap: 5px; margin-bottom: 15px; }
+    .tab-btn { flex: 1; padding: 8px; background: var(--accent-light); border: none; cursor: pointer; }
+    .tab-btn.active { background: var(--accent); color: white; }
+
+    .panel { display: none; }
+    .panel.active { display: block; }
+
     .modal {
-      display: none;
-      position: fixed;
-      top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.6);
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.7); justify-content: center; align-items: center; z-index: 1000;
     }
-    .modal-content {
-      background: white;
-      padding: 20px;
-      border-radius: 16px;
-      text-align: center;
-      width: 85%;
-      max-width: 320px;
-    }
-    #preview {
-      width: 100%;
-      height: 220px;
-      background: #000;
-      border-radius: 10px;
-      margin-top: 10px;
-      object-fit: cover;
-    }
+    .modal-content { background: var(--card-bg); padding: 20px; border-radius: 16px; width: 85%; max-width: 320px; }
   </style>
 </head>
 <body>
 
 <div class="app-container">
-  <div class="header">🐾 Meow Whisper</div>
-
-  <div class="card">
-    <div>Мой ID: <strong id="my-id">mw-8842</strong></div>
-    <button class="btn" onclick="copyInviteLink()">📋 Скопировать ссылку для друга</button>
-    <button class="btn btn-secondary" onclick="openScanner()">📷 Открыть сканер QR</button>
+  <div class="header">
+    <div class="title">🐾 Meow Whisper</div>
+    <!-- Переключатель языка -->
+    <select id="lang-select" onchange="changeLang(this.value)">
+      <option value="ru">🇷🇺 РУС</option>
+      <option value="en">🇬🇧 ENG</option>
+      <option value="tat">Татарча</option>
+      <option value="tr">🇹🇷 TUR</option>
+      <option value="ar">🇦🇪 ARB</option>
+    </select>
   </div>
 
-  <div id="status" style="text-align:center; font-size: 14px; color: #7a6b60;">
-    Готов к подключению
+  <!-- Темы оформления -->
+  <div class="controls-row">
+    <select id="theme-select" style="width:100%" onchange="changeTheme(this.value)">
+      <option value="default">🎨 Тема: Беж (Пастель)</option>
+      <option value="mint">🌿 Тема: Мятная</option>
+      <option value="hitech">⚡ Тема: Хай-тек Серый</option>
+    </select>
+  </div>
+
+  <!-- Вкладки -->
+  <div class="tabs">
+    <button class="tab-btn active" id="tab-chat-btn" onclick="switchTab('chat')">💬 Чат</button>
+    <button class="tab-btn" id="tab-notes-btn" onclick="switchTab('notes')">🐱 Мои котята</button>
+  </div>
+
+  <!-- Чат -->
+  <div id="panel-chat" class="panel active">
+    <div style="background: var(--bg-color); padding: 10px; border-radius: 10px; font-size: 13px;">
+      <div><span id="lbl-id">Мой ID:</span> <b id="my-id">...</b></div>
+      <button class="btn" id="btn-copy" onclick="copyInviteLink()">📋 Скопировать ссылку</button>
+      <button class="btn btn-sub" id="btn-qr" onclick="openScanner()">📷 Сканер QR</button>
+    </div>
+
+    <div id="status" style="text-align:center; font-size: 12px; margin-top: 8px; opacity: 0.8;">
+      Подключение к Firebase...
+    </div>
+
+    <div class="chat-box" id="chat-box"></div>
+
+    <div style="display: flex; gap: 5px;">
+      <input type="text" id="msg-input" placeholder="Сообщение..." style="flex:1;">
+      <button class="btn" style="width: auto; margin:0;" onclick="sendMessage()">🐾</button>
+    </div>
+  </div>
+
+  <!-- Заметки -->
+  <div id="panel-notes" class="panel">
+    <h4 style="margin: 0 0 10px 0;" id="lbl-notes-title">Личные заметки</h4>
+    <textarea id="notes-input" style="width:100%; height: 180px; box-sizing: border-box;" placeholder="Сохраняйте здесь важные записи..."></textarea>
+    <button class="btn" id="btn-save-notes" onclick="saveNotes()">Сохранить заметки</button>
   </div>
 </div>
 
-<!-- Модальное окно для QR-сканера -->
+<!-- Модальное окно QR -->
 <div id="qr-modal" class="modal">
   <div class="modal-content">
-    <h3>Сканер QR-кода</h3>
-    <video id="preview" autoplay playsinline></video>
-    <button class="btn btn-secondary" onclick="closeScanner()" style="margin-top:12px;">Закрыть</button>
+    <h3 id="lbl-qr-title">Сканер QR-кода</h3>
+    <div id="qr-reader" style="width: 100%;"></div>
+    <button class="btn btn-sub" onclick="closeScanner()" style="margin-top:10px;">Закрыть</button>
   </div>
 </div>
 
 <script>
-  // 1. Генерация ссылки собеседнику
-  const myId = "mw-" + Math.floor(1000 + Math.random() * 9000);
+  // 1. КОНФИГУРАЦИЯ FIREBASE 
+  // (Замените своими ключами из консоли Firebase при необходимости)
+  const firebaseConfig = {
+    databaseURL: "https://meow-whisper-default-rtdb.firebaseio.com"
+  };
+  
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+
+  // Словари языков
+  const dict = {
+    ru: { copy: "📋 Скопировать ссылку", qr: "📷 Сканер QR", status: "🟢 Подключено к Firebase", sendErr: "Ошибка отправки", notesTitle: "Мои котята (Заметки)", save: "Сохранить", myId: "Мой ID:" },
+    en: { copy: "📋 Copy Link", qr: "📷 QR Scanner", status: "🟢 Connected to Firebase", sendErr: "Send error", notesTitle: "My Kittens (Notes)", save: "Save", myId: "My ID:" },
+    tat: { copy: "📋 Ссылканы күчерү", qr: "📷 QR Сканер", status: "🟢 Firebase-ка тоташты", sendErr: "Юберү хатасы", notesTitle: "Минем мәчеләрем", save: "Саклау", myId: "Минем ID:" },
+    tr: { copy: "📋 Bağlantıyı Kopyala", qr: "📷 QR Tarayıcı", status: "🟢 Firebase Bağlandı", sendErr: "Hata", notesTitle: "Kedilerim (Notlar)", save: "Kaydet", myId: "ID'im:" },
+    ar: { copy: "📋 نسخ الرابط", qr: "📷 ماسح QR", status: "🟢 متصل بـ Firebase", sendErr: "خطأ", notesTitle: "قططي (ملاحظات)", save: "حفظ", myId: "معرفي:" }
+  };
+
+  let currentLang = 'ru';
+  let html5QrcodeScanner = null;
+
+  // Мой уникальный ID
+  let myId = localStorage.getItem('mw_user_id');
+  if(!myId) {
+    myId = "mw-" + Math.floor(1000 + Math.random() * 9000);
+    localStorage.setItem('mw_user_id', myId);
+  }
   document.getElementById('my-id').innerText = myId;
 
+  // Определение комнаты из URL (или используем собственный ID)
+  const urlParams = new URLSearchParams(window.location.search);
+  let currentRoom = urlParams.get('room') || myId;
+
+  // Подключение к комнате в Firebase
+  const roomRef = db.ref("rooms/" + currentRoom);
+  document.getElementById('status').innerText = dict[currentLang].status + " (Комната: " + currentRoom + ")";
+
+  // Слушаем новые сообщения из Firebase
+  roomRef.on('child_added', (snapshot) => {
+    const data = snapshot.val();
+    const type = (data.sender === myId) ? 'my' : 'peer';
+    addMessage(data.text, type);
+    if (data.sender !== myId) playSound('meow');
+  });
+
+  // Отправка сообщения в Firebase
+  function sendMessage() {
+    const input = document.getElementById('msg-input');
+    const txt = input.value.trim();
+    if (!txt) return;
+
+    roomRef.push({
+      sender: myId,
+      text: txt,
+      timestamp: Date.now()
+    });
+
+    playSound('meow');
+    input.value = '';
+  }
+
+  function addMessage(txt, type) {
+    const box = document.getElementById('chat-box');
+    const div = document.createElement('div');
+    div.className = 'msg ' + type;
+    div.innerText = txt;
+    box.appendChild(div);
+    box.scrollTop = box.scrollHeight;
+  }
+
+  // Звуки (Web Audio API)
+  function playSound(type) {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+
+      if (type === 'meow') {
+        osc.frequency.setValueAtTime(400, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 0.15);
+        gain.gain.setValueAtTime(0.3, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+        osc.start(); osc.stop(ctx.currentTime + 0.3);
+      }
+    } catch(e) {}
+  }
+
+  // Копирование ссылки
   function copyInviteLink() {
-    // Формируем ссылку с ID вашей комнаты
-    const inviteUrl = window.location.origin + window.location.pathname + '?room=' + myId;
-    
-    navigator.clipboard.writeText(inviteUrl).then(() => {
-      alert("Ссылка скопирована! Отправьте её собеседнику:\n" + inviteUrl);
-    }).catch(() => {
-      prompt("Скопируйте ссылку вручную:", inviteUrl);
+    const link = window.location.origin + window.location.pathname + '?room=' + myId;
+    navigator.clipboard.writeText(link).then(() => {
+      alert("Ссылка на вашу комнату скопирована!");
+    }).catch(() => { prompt("Скопируйте ссылку:", link); });
+  }
+
+  // Вкладки
+  function switchTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    if(tab === 'chat') {
+      document.getElementById('tab-chat-btn').classList.add('active');
+      document.getElementById('panel-chat').classList.add('active');
+    } else {
+      document.getElementById('tab-notes-btn').classList.add('active');
+      document.getElementById('panel-notes').classList.add('active');
+      document.getElementById('notes-input').value = localStorage.getItem('mw_notes') || '';
+    }
+  }
+
+  function saveNotes() {
+    localStorage.setItem('mw_notes', document.getElementById('notes-input').value);
+    alert("Заметки сохранены!");
+  }
+
+  function changeTheme(theme) {
+    document.body.className = theme !== 'default' ? 'theme-' + theme : '';
+  }
+
+  function changeLang(lang) {
+    currentLang = lang;
+    const d = dict[lang];
+    document.getElementById('btn-copy').innerText = d.copy;
+    document.getElementById('btn-qr').innerText = d.qr;
+    document.getElementById('lbl-id').innerText = d.myId;
+    document.getElementById('lbl-notes-title').innerText = d.notesTitle;
+    document.getElementById('btn-save-notes').innerText = d.save;
+  }
+
+  // QR-сканер
+  function openScanner() {
+    document.getElementById('qr-modal').style.display = 'flex';
+    html5QrcodeScanner = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: 200 });
+    html5QrcodeScanner.render((text) => {
+      closeScanner();
+      window.location.href = text;
     });
   }
 
-  // Проверка: перешел ли собеседник по ссылке
-  const urlParams = new URLSearchParams(window.location.search);
-  const targetRoom = urlParams.get('room');
-  if (targetRoom) {
-    document.getElementById('status').innerText = "Подключение к комнате: " + targetRoom;
-  }
-
-  // 2. Встроенная работа с камерой (Сканер)
-  let videoStream = null;
-
-  async function openScanner() {
-    const modal = document.getElementById('qr-modal');
-    const video = document.getElementById('preview');
-    modal.style.display = 'flex';
-
-    try {
-      // Запуск камеры устройства
-      videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-      video.srcObject = videoStream;
-    } catch (err) {
-      alert("Не удалось открыть камеру. Убедитесь, что дали разрешение на доступ к камере в браузере.");
-      closeScanner();
-    }
-  }
-
   function closeScanner() {
-    const modal = document.getElementById('qr-modal');
-    if (videoStream) {
-      videoStream.getTracks().forEach(track => track.stop());
-    }
-    modal.style.display = 'none';
+    if(html5QrcodeScanner) html5QrcodeScanner.clear().catch(() => {});
+    document.getElementById('qr-modal').style.display = 'none';
   }
 </script>
-
 </body>
 </html>
