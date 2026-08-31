@@ -1,853 +1,499 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="tt">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meow Whisper Chat v7.0</title>
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-    <!-- QR Code & Scanner -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script src="https://unpkg.com/html5-qrcode"></script>
-    <style>
-        :root {
-            --bg-color: #f7f3ee;
-            --main-color: #9e6d47;
-            --main-hover: #825735;
-            --chat-bg: #ffffff;
-            --my-msg-bg: #f3e9df;
-            --other-msg-bg: #f8f9fa;
-            --text-color: #2c2a29;
-            --shadow-sm: 0 4px 12px rgba(0,0,0,0.04);
-            --shadow-md: 0 8px 24px rgba(158, 109, 71, 0.12);
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Meow Whisper Chat v8.0</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
 
-        body.theme-beige { --bg-color: #f7f3ee; --main-color: #9e6d47; --main-hover: #825735; --chat-bg: #ffffff; --my-msg-bg: #f3e9df; --other-msg-bg: #f8f9fa; --text-color: #2c2a29; }
-        body.theme-pastel-blue { --bg-color: #f0f4f8; --main-color: #4a7c59; --main-hover: #3b6346; --chat-bg: #ffffff; --my-msg-bg: #e2ede4; --other-msg-bg: #f8f9fa; --text-color: #1e2923; }
-        body.theme-mint { --bg-color: #f2f7f4; --main-color: #3d8b7a; --main-hover: #2f6e61; --chat-bg: #ffffff; --my-msg-bg: #dff2ed; --other-msg-bg: #f8f9fa; --text-color: #1a332d; }
-        body.theme-hitech { --bg-color: #f1f3f5; --main-color: #495057; --main-hover: #343a40; --chat-bg: #ffffff; --my-msg-bg: #e9ecef; --other-msg-bg: #f8f9fa; --text-color: #212529; }
-        body.theme-dark-forest { --bg-color: #121816; --main-color: #2d5a45; --main-hover: #3a7359; --chat-bg: #1a2320; --my-msg-bg: #274235; --other-msg-bg: #222d29; --text-color: #e6ede9; }
+    body {
+      background-color: #f4ece4;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 10px;
+      color: #333;
+    }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-        body { background-color: var(--bg-color); color: var(--text-color); display: flex; justify-content: center; align-items: center; height: 100vh; transition: background 0.3s ease; }
-        
-        .app-container { width: 100%; max-width: 460px; height: 94vh; background: var(--chat-bg); display: flex; flex-direction: column; border-radius: 28px; box-shadow: var(--shadow-md); overflow: hidden; position: relative; border: 1px solid rgba(0,0,0,0.05); }
-        
-        /* Верхняя панель */
-        .header { background: var(--chat-bg); padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; border-bottom: 1px solid rgba(0,0,0,0.06); }
-        .top-bar { display: flex; justify-content: space-between; align-items: center; }
-        .user-info { display: flex; align-items: center; gap: 10px; }
-        
-        .avatar-wrap { position: relative; cursor: pointer; }
-        .avatar { width: 42px; height: 42px; border-radius: 50%; background: var(--my-msg-bg); color: var(--main-color); display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 18px; border: 2px solid var(--main-color); overflow: hidden; transition: transform 0.2s; }
-        .avatar:hover { transform: scale(1.05); }
-        .avatar img { width: 100%; height: 100%; object-fit: cover; }
-        .avatar-badge { position: absolute; bottom: -2px; right: -2px; background: var(--main-color); color: #fff; width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; }
+    /* Основной контейнер - полная адаптивность */
+    .app-container {
+      width: 100%;
+      max-width: 800px;
+      height: 94vh;
+      background: #ffffff;
+      border-radius: 20px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+      overflow: hidden;
+      position: relative;
+    }
 
-        .nickname-input { background: rgba(0,0,0,0.04); border: 1px solid transparent; color: var(--text-color); padding: 6px 12px; border-radius: 12px; font-size: 13px; font-weight: 600; width: 100px; outline: none; transition: all 0.2s; }
-        .nickname-input:focus { border-color: var(--main-color); background: #fff; }
+    /* Верхняя панель */
+    .header {
+      padding: 10px 12px;
+      background: #fff;
+      border-bottom: 1px solid #f0f0f0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
 
-        .controls { display: flex; gap: 6px; align-items: center; }
-        select, .btn-icon { padding: 6px 10px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.08); background: rgba(0,0,0,0.02); font-size: 12px; cursor: pointer; outline: none; color: var(--text-color); transition: all 0.2s; font-weight: 500; }
-        select:hover, .btn-icon:hover { background: rgba(0,0,0,0.06); }
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #f0e6df;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      color: #8b5e3c;
+      border: 1px solid #d7ccc8;
+    }
 
-        .id-bar { font-size: 12px; background: rgba(0,0,0,0.03); padding: 6px 6px 6px 12px; border-radius: 16px; display: flex; gap: 8px; align-items: center; }
-        .id-bar input { border: none; background: transparent; flex: 1; outline: none; font-size: 13px; color: var(--text-color); font-weight: 500; }
-        .btn-main { background: var(--main-color); color: #fff; font-weight: 600; padding: 7px 14px; border-radius: 12px; border: none; cursor: pointer; transition: background 0.2s; }
-        .btn-main:hover { background: var(--main-hover); }
+    .nav-btn {
+      padding: 8px 12px;
+      border-radius: 12px;
+      border: none;
+      background: #f7f3f0;
+      color: #4a3b32;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: 0.2s;
+    }
 
-        /* Обои и список сообщений */
-        .chat-box { flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; background-color: var(--chat-bg); background-image: radial-gradient(rgba(0,0,0,0.03) 1px, transparent 0); background-size: 16px 16px; }
-        
-        .msg-row { display: flex; gap: 8px; align-items: flex-end; width: 100%; }
-        .msg-row.my { justify-content: flex-end; }
-        
-        .msg-checkbox { display: none; margin-right: 4px; cursor: pointer; accent-color: var(--main-color); }
-        .select-mode .msg-checkbox { display: inline-block; }
+    .nav-btn.active {
+      background: #8b5e3c;
+      color: #fff;
+    }
 
-        .msg { max-width: 78%; padding: 10px 14px; border-radius: 20px; font-size: 13.5px; line-height: 1.45; word-wrap: break-word; box-shadow: var(--shadow-sm); position: relative; display: flex; flex-direction: column; cursor: pointer; transition: transform 0.1s; }
-        .msg:active { transform: scale(0.99); }
-        .msg.my { background: var(--my-msg-bg); border-bottom-right-radius: 4px; }
-        .msg.other { background: var(--other-msg-bg); border-bottom-left-radius: 4px; border: 1px solid rgba(0,0,0,0.04); }
-        
-        .sender-nickname { font-size: 11px; font-weight: 700; color: var(--main-color); margin-bottom: 3px; }
-        .reply-quote { background: rgba(0,0,0,0.05); border-left: 3px solid var(--main-color); padding: 4px 8px; font-size: 11px; margin-bottom: 6px; border-radius: 6px; opacity: 0.85; }
+    .dropdown-container {
+      position: relative;
+      margin-left: auto;
+      display: flex;
+      gap: 6px;
+    }
 
-        .msg img { max-width: 100%; border-radius: 12px; margin-top: 4px; }
-        .msg audio { max-width: 210px; margin-top: 4px; }
-        
-        .msg-footer { display: flex; justify-content: flex-end; align-items: center; gap: 4px; margin-top: 4px; align-self: flex-end; }
-        .msg-time { font-size: 10px; opacity: 0.55; font-weight: 500; }
-        .msg-status { font-size: 11px; font-weight: bold; opacity: 0.5; }
-        .msg-status.read { color: #2b93d1; opacity: 1; }
+    /* Выпадающее меню открывается влево от края, чтобы не срезаться */
+    .dropdown-menu {
+      position: absolute;
+      top: 110%;
+      right: 0;
+      background: #2d3142;
+      color: #fff;
+      border-radius: 12px;
+      padding: 6px;
+      display: none;
+      flex-direction: column;
+      min-width: 160px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+      z-index: 1000;
+    }
 
-        .reply-preview { display: none; background: rgba(0,0,0,0.03); padding: 8px 14px; font-size: 12px; border-left: 4px solid var(--main-color); justify-content: space-between; align-items: center; }
-        .reply-preview button { background: none; border: none; font-weight: bold; color: #888; cursor: pointer; }
+    .dropdown-menu.show {
+      display: flex;
+    }
 
-        .multi-delete-bar { display: none; background: #fff1f1; padding: 8px 16px; justify-content: space-between; align-items: center; border-top: 1px solid #ffe0e0; }
-        .multi-delete-bar button { background: #e63946; color: white; border: none; padding: 6px 12px; border-radius: 10px; font-weight: 600; font-size: 12px; cursor: pointer; }
+    .dropdown-item {
+      padding: 8px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+    }
 
-        /* Футер ввода */
-        .footer { display: flex; padding: 10px 12px; background: var(--chat-bg); border-top: 1px solid rgba(0,0,0,0.06); gap: 8px; align-items: center; }
-        .footer input[type="text"] { flex: 1; padding: 10px 16px; border: 1px solid rgba(0,0,0,0.08); border-radius: 20px; outline: none; font-size: 13.5px; background: rgba(0,0,0,0.02); color: var(--text-color); transition: border 0.2s; }
-        .footer input[type="text"]:focus { border-color: var(--main-color); background: #fff; }
-        
-        .action-btn { background: rgba(0,0,0,0.04); color: var(--text-color); border: none; width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.2s; }
-        .action-btn:hover { background: rgba(0,0,0,0.08); }
-        .action-btn.recording { background: #e63946; color: white; animation: pulse 1s infinite; }
-        .send-btn { background: var(--main-color); color: white; border: none; width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.2s; }
-        .send-btn:hover { background: var(--main-hover); }
+    .dropdown-item:hover {
+      background: rgba(255,255,255,0.1);
+    }
 
-        /* Векторные Иконки SVG */
-        .icon-svg { width: 18px; height: 18px; fill: currentColor; }
+    /* Комната */
+    .room-bar {
+      padding: 8px 12px;
+      background: #faf8f5;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid #f0f0f0;
+    }
 
-        /* Модальные окна */
-        .modal { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 100; justify-content: center; align-items: center; }
-        .modal-content { background: var(--chat-bg); color: var(--text-color); width: 88%; max-width: 360px; border-radius: 24px; padding: 20px; display: flex; flex-direction: column; gap: 12px; box-shadow: var(--shadow-md); max-height: 80vh; overflow-y: auto; }
-        .modal-title { font-weight: 700; font-size: 16px; margin-bottom: 4px; border-bottom: 1px solid rgba(0,0,0,0.06); padding-bottom: 8px; }
-        .chat-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: rgba(0,0,0,0.03); border-radius: 12px; cursor: pointer; transition: background 0.2s; }
-        .chat-item:hover { background: rgba(0,0,0,0.06); }
-        .btn-del-chat { background: #e63946; color: white; border: none; padding: 4px 8px; border-radius: 6px; font-size: 11px; cursor: pointer; }
+    .room-input {
+      flex: 1;
+      padding: 8px 12px;
+      border: 1px solid #e0e0e0;
+      border-radius: 10px;
+      outline: none;
+      font-size: 13px;
+      background: #fff;
+    }
 
-        .avatar-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 8px; }
-        .avatar-option { width: 50px; height: 50px; border-radius: 50%; background: rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer; border: 2px solid transparent; transition: all 0.2s; }
-        .avatar-option:hover { border-color: var(--main-color); transform: scale(1.08); }
+    .btn-action {
+      padding: 8px 16px;
+      background: #a07855;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: bold;
+    }
 
-        .msg-menu-btn { padding: 10px 14px; background: rgba(0,0,0,0.03); border: 1px solid rgba(0,0,0,0.05); border-radius: 12px; text-align: left; font-size: 13px; font-weight: 500; display: flex; gap: 10px; align-items: center; color: var(--text-color); cursor: pointer; transition: background 0.2s; }
-        .msg-menu-btn:hover { background: rgba(0,0,0,0.06); }
+    /* Сообщения */
+    .messages-area {
+      flex: 1;
+      padding: 12px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background-image: radial-gradient(#e5dcd3 1px, transparent 1px);
+      background-size: 16px 16px;
+    }
 
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
-    </style>
+    .message-bubble {
+      max-width: 75%;
+      padding: 10px 14px;
+      border-radius: 16px;
+      background: #fff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+      position: relative;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .message-bubble.selectable {
+      cursor: pointer;
+    }
+
+    .message-bubble.selected {
+      border: 2px solid #a07855;
+      background: #fdfaf7;
+    }
+
+    .message-bubble.out {
+      align-self: flex-end;
+      background: #e8f5e9;
+    }
+
+    .message-img {
+      max-width: 100%;
+      border-radius: 10px;
+      margin-top: 5px;
+      display: block;
+    }
+
+    /* Панель пакетного сохранения/пересылки */
+    .batch-actions-bar {
+      padding: 8px 12px;
+      background: #eef2f5;
+      display: none;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid #d0d7de;
+    }
+
+    .batch-actions-bar.show {
+      display: flex;
+    }
+
+    /* Нижняя панель */
+    .input-bar {
+      padding: 10px 12px;
+      background: #fff;
+      border-top: 1px solid #f0f0f0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .icon-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      border: none;
+      background: #f5f0eb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    .chat-input {
+      flex: 1;
+      padding: 10px 14px;
+      border: 1px solid #e0e0e0;
+      border-radius: 20px;
+      outline: none;
+      font-size: 14px;
+    }
+
+    .send-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #a07855;
+      color: white;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+
+    /* Темы оформления */
+    body.theme-dark .app-container { background: #1e1e1e; color: #fff; }
+    body.theme-dark .header, body.theme-dark .input-bar, body.theme-dark .room-bar { background: #252525; border-color: #333; }
+    body.theme-dark .message-bubble { background: #333; color: #fff; }
+    body.theme-dark .chat-input, body.theme-dark .room-input { background: #2c2c2c; color: #fff; border-color: #444; }
+  </style>
 </head>
-<body class="theme-beige">
+<body>
 
 <div class="app-container">
-    <div class="header">
-        <div class="top-bar">
-            <div class="user-info">
-                <div class="avatar-wrap" onclick="openAvatarModal()" title="Сменить аватар">
-                    <div class="avatar" id="myAvatar">🐱</div>
-                    <div class="avatar-badge">✏️</div>
-                </div>
-                <input type="text" class="nickname-input" id="nicknameInput" value="Котик" onchange="updateNickname()" title="Ваш никнейм">
-            </div>
-            <div class="controls">
-                <button class="btn-icon" onclick="toggleChatsModal()" id="btnSavedChats">Чаты</button>
-                <button class="btn-icon" onclick="toggleKittensModal()" id="btnMyKittens">Заметки</button>
-                <button class="btn-icon" onclick="openQRModal()" title="QR Код">
-                    <svg class="icon-svg" viewBox="0 0 24 24"><path d="M3 3h8v8H3zm2 2v4h4V5zm8-2h8v8h-8zm2 2v4h4V5zM3 13h8v8H3zm2 2v4h4v-4zm13-2h3v2h-3zm-3 0h2v3h-2zm3 3h3v5h-3zm-3 2h2v3h-2zm-2-2h2v2h-2z"/></svg>
-                </button>
-                <select id="langSelect" onchange="changeLanguage()">
-                    <option value="ru">RU</option>
-                    <option value="en">EN</option>
-                    <option value="tr">TR</option>
-                    <option value="tt">TT</option>
-                    <option value="ar">AR</option>
-                </select>
-                <select id="themeSelect" onchange="changeTheme()">
-                    <option value="theme-beige" id="optThemeBeige">Бежевый</option>
-                    <option value="theme-pastel-blue" id="optThemeBlue">Пастельный</option>
-                    <option value="theme-mint" id="optThemeMint">Мятный</option>
-                    <option value="theme-hitech" id="optThemeHitech">Хай-тек</option>
-                    <option value="theme-dark-forest" id="optThemeDarkForest">Тёмный</option>
-                </select>
-                <select id="soundSelect" onchange="demoSound()">
-                    <option value="meow" id="optSoundMeow">Мяу</option>
-                    <option value="crunch" id="optSoundCrunch">Хруст</option>
-                    <option value="hiss" id="optSoundHiss">Шипенье</option>
-                </select>
-            </div>
-        </div>
-        <div class="id-bar">
-            <span id="labelPartner" style="opacity:0.6;">Чат с:</span>
-            <input type="text" id="partnerIdInput" placeholder="mw-1234">
-            <button class="btn-main" onclick="connectToChatFromInput()" id="btnConnect">Войти</button>
-        </div>
-    </div>
+  <!-- Верхняя шапка -->
+  <div class="header">
+    <div class="avatar">🐱</div>
+    <button class="nav-btn active" id="btn-trader">Трейдер</button>
+    <button class="nav-btn" id="btn-chats">Чатлар</button>
+    <button class="nav-btn" id="btn-notes">Язмалар</button>
 
-    <div class="chat-box" id="chatBox"></div>
+    <div class="dropdown-container">
+      <!-- Звуковое меню -->
+      <button class="icon-btn" id="sound-menu-toggle" title="Звуки">🔔</button>
+      <div class="dropdown-menu" id="sound-dropdown">
+        <div class="dropdown-item" onclick="setSound('meow')">🐱 Мяуканье</div>
+        <div class="dropdown-item" onclick="setSound('purr')">🐾 Мурчание</div>
+        <div class="dropdown-item" onclick="setSound('pop')">🎈 Щелчок</div>
+        <div class="dropdown-item" onclick="setSound('mute')">🔇 Без звука</div>
+      </div>
 
-    <div class="reply-preview" id="replyPreview">
-        <span id="replyText">Ответ на...</span>
-        <button onclick="cancelReply()">✕</button>
-    </div>
+      <!-- Переключатель языка -->
+      <button class="nav-btn" id="lang-toggle">TT ▾</button>
+      <div class="dropdown-menu" id="lang-dropdown">
+        <div class="dropdown-item" onclick="setLanguage('TT')">Татарча (TT)</div>
+        <div class="dropdown-item" onclick="setLanguage('RU')">Русский (RU)</div>
+      </div>
 
-    <div class="multi-delete-bar" id="multiDeleteBar">
-        <span id="selectedCount">Выбрано: 0</span>
-        <div>
-            <button onclick="deleteSelectedMessages()" id="btnConfirmMultiDelete">🗑️ Удалить</button>
-            <button onclick="toggleSelectMode(false)" style="background: #888; margin-left: 4px;" id="btnCancelSelect">Отмена</button>
-        </div>
+      <!-- Выбор темы -->
+      <button class="icon-btn" id="theme-menu-toggle" title="Темы">🎨</button>
+      <div class="dropdown-menu" id="theme-dropdown">
+        <div class="dropdown-item" onclick="setTheme('beige')" id="th-beige">аксыл-көрән</div>
+        <div class="dropdown-item" onclick="setTheme('pastel')" id="th-pastel">ачык күк</div>
+        <div class="dropdown-item" onclick="setTheme('mint')" id="th-mint">бөтнек</div>
+        <div class="dropdown-item" onclick="setTheme('hitech')" id="th-hitech">хай-тек</div>
+        <div class="dropdown-item" onclick="setTheme('dark')" id="th-dark">кара урман</div>
+      </div>
     </div>
+  </div>
 
-    <div class="footer">
-        <button class="action-btn" onclick="toggleSelectMode(true)" title="Выбрать несколько" id="btnSelectMode">
-            <svg class="icon-svg" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-9 14l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
-        </button>
-        <input type="file" id="imageInput" accept="image/*" style="display: none;" onchange="handleImageUpload(event)">
-        <button class="action-btn" onclick="document.getElementById('imageInput').click()" title="Отправить фото">
-            <svg class="icon-svg" viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
-        </button>
-        <button class="action-btn" id="recordBtn" onclick="toggleRecord()" title="Голосовое">
-            <svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/></svg>
-        </button>
-        
-        <input type="text" id="messageInput" placeholder="Напишите сообщение...">
-        <button class="send-btn" onclick="sendMessage()">
-            <svg class="icon-svg" style="fill:#fff; transform: rotate(45deg); margin-left:-2px;" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
-        </button>
-    </div>
+  <!-- Адрес комнаты -->
+  <div class="room-bar">
+    <span style="font-size: 12px; color: #777;" id="lbl-chat">Чат:</span>
+    <input type="text" class="room-input" value="mw-1234" id="room-id">
+    <button class="btn-action" id="btn-enter">Керү</button>
+  </div>
 
-    <!-- Модалка выбора аватарки -->
-    <div class="modal" id="avatarModal">
-        <div class="modal-content">
-            <div class="modal-title" id="titleAvatar">Выберите аватар</div>
-            <input type="file" id="avatarFileInput" accept="image/*" style="display: none;" onchange="uploadCustomAvatar(event)">
-            <button class="btn-main" onclick="document.getElementById('avatarFileInput').click()" id="btnUploadPhoto">📷 Загрузить своё фото</button>
-            <div style="font-size: 12px; opacity:0.6; text-align:center; margin-top:4px;" id="lblOrChoose">Или выберите котика:</div>
-            <div class="avatar-grid">
-                <div class="avatar-option" onclick="selectPresetAvatar('🐱')">🐱</div>
-                <div class="avatar-option" onclick="selectPresetAvatar('😺')">😺</div>
-                <div class="avatar-option" onclick="selectPresetAvatar('😻')">😻</div>
-                <div class="avatar-option" onclick="selectPresetAvatar('😼')">😼</div>
-                <div class="avatar-option" onclick="selectPresetAvatar('😾')">😾</div>
-                <div class="avatar-option" onclick="selectPresetAvatar('🐈‍⬛')">🐈‍⬛</div>
-                <div class="avatar-option" onclick="selectPresetAvatar('🐾')">🐾</div>
-                <div class="avatar-option" onclick="selectPresetAvatar('🦁')">🦁</div>
-            </div>
-            <button onclick="closeAvatarModal()" style="margin-top: 10px; padding: 8px;" id="btnCloseAvatar">Закрыть</button>
-        </div>
+  <!-- Окно сообщений -->
+  <div class="messages-area" id="messages-container">
+    <div class="message-bubble selectable" onclick="toggleSelect(this)">
+      Сәлам! Тәҗрибәне башлыйбызмы?
     </div>
+    <div class="message-bubble out selectable" onclick="toggleSelect(this)">
+      Әйе, барысы да әзер!
+      <img src="https://via.placeholder.com/150/a07855/ffffff?text=Photo+1" class="message-img">
+    </div>
+  </div>
 
-    <!-- Модалка сохраненных чатов -->
-    <div class="modal" id="chatsModal">
-        <div class="modal-content">
-            <div class="modal-title" id="titleSavedChats">Сохраненные чаты</div>
-            <div id="chatsList" style="display: flex; flex-direction: column; gap: 6px;"></div>
-            <button onclick="toggleChatsModal()" style="margin-top: 10px; padding: 8px;" id="btnCloseChats">Закрыть</button>
-        </div>
+  <!-- Панель выделенных объектов -->
+  <div class="batch-actions-bar" id="batch-bar">
+    <span id="selected-count" style="font-size: 12px;">Сайланды: 0</span>
+    <div style="display: flex; gap: 6px;">
+      <button class="nav-btn" onclick="shareSelected()" style="background: #25D366; color: white;">Переслать (WhatsApp/TG)</button>
+      <button class="btn-action" onclick="saveSelectedPack()">Саклау (Кучка белән)</button>
     </div>
+  </div>
 
-    <!-- Модалка Блокнот Мои котята -->
-    <div class="modal" id="kittensModal">
-        <div class="modal-content">
-            <div class="modal-title" id="titleKittens">🐾 Мои котята (Заметки)</div>
-            <div id="kittensList" style="display: flex; flex-direction: column; gap: 6px;"></div>
-            <button onclick="toggleKittensModal()" style="margin-top: 10px; padding: 8px;" id="btnCloseKittens">Закрыть</button>
-        </div>
-    </div>
-
-    <!-- Модалка QR Кода -->
-    <div class="modal" id="qrModal">
-        <div class="modal-content" style="align-items: center; text-align: center;">
-            <div class="modal-title" id="titleQR">Мой QR Код / Сканер</div>
-            <div id="qrcode" style="margin: 10px auto;"></div>
-            <div id="qr-reader" style="width: 100%; display: none;"></div>
-            <button onclick="startQRScanner()" id="btnStartScan" class="btn-main" style="width: 100%;">📷 Сканировать QR друга</button>
-            <button onclick="closeQRModal()" style="margin-top: 6px; width: 100%; padding: 8px;" id="btnCloseQR">Закрыть</button>
-        </div>
-    </div>
-
-    <!-- Модалка контекстного меню сообщения -->
-    <div class="modal" id="msgMenuModal">
-        <div class="modal-content">
-            <div class="modal-title" id="titleMsgMenu">Действие с сообщением</div>
-            <button class="msg-menu-btn" onclick="actionReply()" id="mReply">↩️ Ответить</button>
-            <button class="msg-menu-btn" onclick="actionCopy()" id="mCopy">📋 Копировать текст</button>
-            <button class="msg-menu-btn" onclick="actionForward()" id="mForward">↗️ Переслать</button>
-            <button class="msg-menu-btn" onclick="actionSaveKittens()" id="mSave">🐾 В "Мои котята"</button>
-            <button class="msg-menu-btn" onclick="actionDelete()" id="mDelete" style="color: #e63946;">🗑️ Удалить</button>
-            <button onclick="closeMsgMenu()" style="margin-top: 6px; padding: 8px;" id="mCancel">Отмена</button>
-        </div>
-    </div>
+  <!-- Ввод сообщения -->
+  <div class="input-bar">
+    <button class="icon-btn" id="btn-multi-select" onclick="toggleSelectMode()" title="Выбрать несколько">☑️</button>
+    <button class="icon-btn" title="Картинка" onclick="addImageMsg()">🖼️</button>
+    <button class="icon-btn" title="Голосовое">🎙️</button>
+    <input type="text" class="chat-input" placeholder="Хәбәр языгыз..." id="msg-input">
+    <button class="send-btn" onclick="sendMessage()">➔</button>
+  </div>
 </div>
 
 <script>
-    const firebaseConfig = {
-        apiKey: "AIzaSyBYP7VgXjs6eovGU8ptQignO8ha_uQCpwQ",
-        authDomain: "my-cat-3db92.firebaseapp.com",
-        databaseURL: "https://my-cat-3db92-default-rtdb.europe-west1.firebasedatabase.app",
-        projectId: "my-cat-3db92",
-        storageBucket: "my-cat-3db92.firebasestorage.app",
-        messagingSenderId: "572307984373",
-        appId: "1:572307984373:web:afbd346db8c6797b201abc"
-    };
+  let currentLang = 'TT';
+  let isSelectMode = false;
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-    const auth = firebase.auth();
-
-    auth.signInAnonymously().catch((error) => console.error("Ошибка авторизации:", error));
-
-    const i18n = {
-        ru: {
-            savedChats: "Чаты", myKittens: "Заметки", chatWith: "Чат с:", connect: "Войти", placeholder: "Напишите сообщение...",
-            themeBeige: "Бежевый", themeBlue: "Пастельный", themeMint: "Мятный", themeHitech: "Хай-тек", themeDarkForest: "Тёмный",
-            soundMeow: "Мяу", soundCrunch: "Хруст", soundHiss: "Шипенье",
-            titleSaved: "Сохраненные чаты", titleKittens: "🐾 Мои котята (Заметки)", titleQR: "Мой QR-код / Сканер", titleMenu: "Действие с сообщением",
-            titleAvatar: "Выберите аватар", uploadPhoto: "📷 Загрузить своё фото", orChoose: "Или выберите котика:",
-            reply: "↩️ Ответить", copy: "📋 Копировать текст", forward: "↗️ Переслать", save: "🐾 В \"Мои котята\"", del: "🗑️ Удалить", cancel: "Отмена", close: "Закрыть",
-            startScan: "📷 Сканировать QR друга", noChats: "Нет сохраненных чатов", noKittens: "Заметок пока нет"
-        },
-        en: {
-            savedChats: "Chats", myKittens: "Notes", chatWith: "Chat with:", connect: "Join", placeholder: "Type a message...",
-            themeBeige: "Beige", themeBlue: "Pastel", themeMint: "Mint", themeHitech: "Hi-Tech", themeDarkForest: "Dark",
-            soundMeow: "Meow", soundCrunch: "Crunch", soundHiss: "Hiss",
-            titleSaved: "Saved Chats", titleKittens: "🐾 My Kittens (Notes)", titleQR: "My QR Code / Scanner", titleMenu: "Message Options",
-            titleAvatar: "Choose Avatar", uploadPhoto: "📷 Upload your photo", orChoose: "Or choose a cat:",
-            reply: "↩️ Reply", copy: "📋 Copy Text", forward: "↗️ Forward", save: "🐾 To \"My Kittens\"", del: "🗑️ Delete", cancel: "Cancel", close: "Close",
-            startScan: "📷 Scan Friend's QR", noChats: "No saved chats", noKittens: "No notes yet"
-        },
-        tr: {
-            savedChats: "Sohbetler", myKittens: "Notlar", chatWith: "Sohbet:", connect: "Giriş", placeholder: "Mesaj yazın...",
-            themeBeige: "Bej", themeBlue: "Pastel", themeMint: "Nane", themeHitech: "Hi-Tech", themeDarkForest: "Karanlık",
-            soundMeow: "Miyav", soundCrunch: "Çıtır", soundHiss: "Tisss",
-            titleSaved: "Kaydedilen Sohbetler", titleKittens: "🐾 Kedilerim (Notlar)", titleQR: "QR Kodum / Tarayıcı", titleMenu: "Mesaj Seçenekleri",
-            titleAvatar: "Avatar Seçin", uploadPhoto: "📷 Fotoğraf Yükle", orChoose: "Veya bir kedi seçin:",
-            reply: "↩️ Yanıtla", copy: "📋 Metni Kopyala", forward: "↗️ İlet", save: "🐾 \"Kedilerim\"e Ekle", del: "🗑️ Sil", cancel: "İptal", close: "Kapat",
-            startScan: "📷 QR Taramak", noChats: "Kayıtlı sohbet yok", noKittens: "Henüz not yok"
-        },
-        tt: {
-            savedChats: "Чатлар", myKittens: "Заметкалар", chatWith: "Чат:", connect: "Керү", placeholder: "Хәбәр языгыз...",
-            themeBeige: "Беж", themeBlue: "Пастель", themeMint: "Мятный", themeHitech: "Хай-тек", themeDarkForest: "Кара",
-            soundMeow: "Мяу", soundCrunch: "Хруст", soundHiss: "Шипенье",
-            titleSaved: "Сакланган чатлар", titleKittens: "🐾 Минем песиләрем (Заметкалар)", titleQR: "Мой QR / Сканер", titleMenu: "Хәбәр белән гамәл",
-            titleAvatar: "Аватар сайлагыз", uploadPhoto: "📷 Фото йөкләү", orChoose: "Яки песи сайлагыз:",
-            reply: "↩️ Җавап бирергә", copy: "📋 Күчерергә", forward: "↗️ Җибәрергә", save: "🐾 \"Песиләрем\"гә", del: "🗑️ Югалырга", cancel: "Баш тарту", close: "Ябарга",
-            startScan: "📷 QR сканерлау", noChats: "Сакланган чатлар юк", noKittens: "Заметкалар юк"
-        },
-        ar: {
-            savedChats: "المحادثات", myKittens: "الملاحظات", chatWith: "محادثة مع:", connect: "دخول", placeholder: "اكتب رسالة...",
-            themeBeige: "بيج", themeBlue: "أزرق فاتح", themeMint: "نعناعي", themeHitech: "تقني", themeDarkForest: "مظلم",
-            soundMeow: "مياو", soundCrunch: "قرمشة", soundHiss: "فحيح",
-            titleSaved: "المحادثات المحفوظة", titleKittens: "🐾 قططي (ملاحظات)", titleQR: "رمز QR الخاص بي", titleMenu: "خيارات الرسالة",
-            titleAvatar: "اختر صورة شخصية", uploadPhoto: "📷 تحميل صورتك", orChoose: "أو اختر قطة:",
-            reply: "↩️ رد", copy: "📋 نسخ النص", forward: "↗️ إعادة توجيه", save: "🐾 حفظ إلى \"قططي\"", del: "🗑️ حذف", cancel: "إلغاء", close: "إغلاق",
-            startScan: "📷 مسح QR للصديق", noChats: "لا توجد محادثات", noKittens: "لا توجد ملاحظات"
-        }
-    };
-
-    let myId = localStorage.getItem('mw_user_id');
-    if (!myId) {
-        myId = 'mw-' + Math.floor(1000 + Math.random() * 9000);
-        localStorage.setItem('mw_user_id', myId);
+  // Словарь с полной татарской графикой (Ә, Ө, Ү, Җ, Ң, Һ)
+  const dict = {
+    TT: {
+      trader: "Трейдер",
+      chats: "Чатлар",
+      notes: "Язмалар",
+      enter: "Керү",
+      placeholder: "Хәбәр языгыз...",
+      chatLbl: "Чат:",
+      thBeige: "аксыл-көрән",
+      thPastel: "ачык күк",
+      thMint: "бөтнек",
+      thHitech: "хай-тек",
+      thDark: "кара урман"
+    },
+    RU: {
+      trader: "Трейдер",
+      chats: "Чаты",
+      notes: "Заметки",
+      enter: "Войти",
+      placeholder: "Напишите сообщение...",
+      chatLbl: "Чат:",
+      thBeige: "Бежевый",
+      thPastel: "Пастельно-голубой",
+      thMint: "Мятный",
+      thHitech: "Хай-тек",
+      thDark: "Темный лес"
     }
-
-    let myNickname = localStorage.getItem('mw_nickname') || 'Котик';
-    document.getElementById('nicknameInput').value = myNickname;
-
-    let myAvatarData = localStorage.getItem('mw_avatar') || '🐱';
-    renderMyAvatar();
-
-    function updateNickname() {
-        myNickname = document.getElementById('nicknameInput').value.trim() || 'Котик';
-        localStorage.setItem('mw_nickname', myNickname);
-    }
-
-    // Аватар
-    function openAvatarModal() { document.getElementById('avatarModal').style.display = 'flex'; }
-    function closeAvatarModal() { document.getElementById('avatarModal').style.display = 'none'; }
-
-    function renderMyAvatar() {
-        const avatarDiv = document.getElementById('myAvatar');
-        if (myAvatarData.startsWith('data:image')) {
-            avatarDiv.innerHTML = `<img src="${myAvatarData}">`;
-        } else {
-            avatarDiv.innerText = myAvatarData;
-        }
-    }
-
-    function selectPresetAvatar(emoji) {
-        myAvatarData = emoji;
-        localStorage.setItem('mw_avatar', myAvatarData);
-        renderMyAvatar();
-        closeAvatarModal();
-    }
-
-    function uploadCustomAvatar(e) {
-        const file = e.target.files[0]; if (!file) return;
-        const reader = new FileReader();
-        reader.onload = function(event) {
-            const img = new Image();
-            img.onload = function() {
-                const canvas = document.createElement('canvas');
-                canvas.width = 120; canvas.height = 120;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, 120, 120);
-                myAvatarData = canvas.toDataURL('image/jpeg', 0.8);
-                localStorage.setItem('mw_avatar', myAvatarData);
-                renderMyAvatar();
-                closeAvatarModal();
-            }
-            img.src = event.target.result;
-        }
-        reader.readAsDataURL(file);
-    }
-
-    let currentPartnerId = null;
-    let currentChatId = null;
-    let selectedMsgData = null;
-    let selectedMsgKey = null;
-    let replyToData = null;
-    let html5QrcodeScanner = null;
-    let isSelectMode = false;
-
-    // Звуки
-    function playSound(type) {
-        try {
-            const ctx = new (window.AudioContext || window.webkitAudioContext)();
-            if (type === 'meow') {
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.connect(gain); gain.connect(ctx.destination);
-                osc.frequency.setValueAtTime(400, ctx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(750, ctx.currentTime + 0.15);
-                osc.frequency.exponentialRampToValueAtTime(320, ctx.currentTime + 0.3);
-                gain.gain.setValueAtTime(0.3, ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-                osc.start(); osc.stop(ctx.currentTime + 0.3);
-            } else if (type === 'crunch') {
-                const bufferSize = ctx.sampleRate * 0.15;
-                const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-                const data = buffer.getChannelData(0);
-                for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
-                const noise = ctx.createBufferSource();
-                noise.buffer = buffer;
-                const filter = ctx.createBiquadFilter();
-                filter.type = 'bandpass'; filter.frequency.value = 3000;
-                const gain = ctx.createGain();
-                gain.gain.setValueAtTime(0.4, ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
-                noise.connect(filter); filter.connect(gain); gain.connect(ctx.destination);
-                noise.start();
-            } else if (type === 'hiss') {
-                const bufferSize = ctx.sampleRate * 0.3;
-                const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-                const data = buffer.getChannelData(0);
-                for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
-                const noise = ctx.createBufferSource();
-                noise.buffer = buffer;
-                const filter = ctx.createBiquadFilter();
-                filter.type = 'highpass'; filter.frequency.value = 4000;
-                const gain = ctx.createGain();
-                gain.gain.setValueAtTime(0.25, ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-                noise.connect(filter); filter.connect(gain); gain.connect(ctx.destination);
-                noise.start();
-            }
-        } catch(e) {}
-    }
-
-    function demoSound() { playSound(document.getElementById('soundSelect').value); }
-
-    function changeLanguage() {
-        const lang = document.getElementById('langSelect').value;
-        const t = i18n[lang] || i18n.ru;
-
-        document.getElementById('btnSavedChats').innerText = t.savedChats;
-        document.getElementById('btnMyKittens').innerText = t.myKittens;
-        document.getElementById('labelPartner').innerText = t.chatWith;
-        document.getElementById('btnConnect').innerText = t.connect;
-        document.getElementById('messageInput').placeholder = t.placeholder;
-
-        document.getElementById('optThemeBeige').innerText = t.themeBeige;
-        document.getElementById('optThemeBlue').innerText = t.themeBlue;
-        document.getElementById('optThemeMint').innerText = t.themeMint;
-        document.getElementById('optThemeHitech').innerText = t.themeHitech;
-        document.getElementById('optThemeDarkForest').innerText = t.themeDarkForest;
-
-        document.getElementById('optSoundMeow').innerText = t.soundMeow;
-        document.getElementById('optSoundCrunch').innerText = t.soundCrunch;
-        document.getElementById('optSoundHiss').innerText = t.soundHiss;
-
-        document.getElementById('titleSavedChats').innerText = t.titleSaved;
-        document.getElementById('titleKittens').innerText = t.titleKittens;
-        document.getElementById('titleQR').innerText = t.titleQR;
-        document.getElementById('titleMsgMenu').innerText = t.titleMenu;
-
-        document.getElementById('titleAvatar').innerText = t.titleAvatar;
-        document.getElementById('btnUploadPhoto').innerText = t.uploadPhoto;
-        document.getElementById('lblOrChoose').innerText = t.orChoose;
-
-        document.getElementById('mReply').innerText = t.reply;
-        document.getElementById('mCopy').innerText = t.copy;
-        document.getElementById('mForward').innerText = t.forward;
-        document.getElementById('mSave').innerText = t.save;
-        document.getElementById('mDelete').innerText = t.del;
-        document.getElementById('mCancel').innerText = t.cancel;
-
-        document.getElementById('btnCloseAvatar').innerText = t.close;
-        document.getElementById('btnCloseChats').innerText = t.close;
-        document.getElementById('btnCloseKittens').innerText = t.close;
-        document.getElementById('btnCloseQR').innerText = t.close;
-        document.getElementById('btnStartScan').innerText = t.startScan;
-    }
-
-    function changeTheme() { document.body.className = document.getElementById('themeSelect').value; }
-
-    function getSavedChats() { return JSON.parse(localStorage.getItem('mw_saved_chats') || '[]'); }
-    function saveChatToList(partnerId) {
-        let chats = getSavedChats();
-        if (!chats.includes(partnerId)) { chats.push(partnerId); localStorage.setItem('mw_saved_chats', JSON.stringify(chats)); }
-    }
-    function removeChatFromList(partnerId, e) {
-        e.stopPropagation();
-        let chats = getSavedChats().filter(id => id !== partnerId);
-        localStorage.setItem('mw_saved_chats', JSON.stringify(chats));
-        renderChatsList();
-    }
-
-    function renderChatsList() {
-        const listDiv = document.getElementById('chatsList');
-        const chats = getSavedChats();
-        const lang = document.getElementById('langSelect').value;
-        listDiv.innerHTML = '';
-
-        if (chats.length === 0) {
-            listDiv.innerHTML = `<span style="font-size:12px; opacity:0.6;">${i18n[lang].noChats}</span>`;
-            return;
-        }
-
-        chats.forEach(partnerId => {
-            const item = document.createElement('div');
-            item.className = 'chat-item';
-            item.innerHTML = `<span>🐾 ${partnerId}</span> <button class="btn-del-chat" onclick="removeChatFromList('${partnerId}', event)">✕</button>`;
-            item.onclick = () => { openChat(partnerId); toggleChatsModal(); };
-            listDiv.appendChild(item);
-        });
-    }
-
-    function toggleChatsModal() {
-        const modal = document.getElementById('chatsModal');
-        modal.style.display = modal.style.display === 'flex' ? 'none' : 'flex';
-        if (modal.style.display === 'flex') renderChatsList();
-    }
-
-    function toggleKittensModal() {
-        const modal = document.getElementById('kittensModal');
-        modal.style.display = modal.style.display === 'flex' ? 'none' : 'flex';
-        if (modal.style.display === 'flex') renderKittensList();
-    }
-
-    function renderKittensList() {
-        const listDiv = document.getElementById('kittensList');
-        const kittens = JSON.parse(localStorage.getItem('mw_my_kittens') || '[]');
-        const lang = document.getElementById('langSelect').value;
-        listDiv.innerHTML = '';
-
-        if (kittens.length === 0) {
-            listDiv.innerHTML = `<span style="font-size:12px; opacity:0.6;">${i18n[lang].noKittens}</span>`;
-            return;
-        }
-
-        kittens.forEach((item) => {
-            const div = document.createElement('div');
-            div.className = 'chat-item';
-            div.style.flexDirection = 'column';
-            div.style.alignItems = 'flex-start';
-            div.innerHTML = `<div style="font-size:13px;">${item.content}</div><div style="font-size:10px; opacity:0.5; margin-top:4px;">${item.date}</div>`;
-            listDiv.appendChild(div);
-        });
-    }
-
-    function connectToChatFromInput() {
-        const partnerId = document.getElementById('partnerIdInput').value.trim();
-        if (!partnerId) return alert('Введите ID друга!');
-        openChat(partnerId);
-    }
-
-    function openChat(partnerId) {
-        currentPartnerId = partnerId;
-        document.getElementById('partnerIdInput').value = partnerId;
-        saveChatToList(partnerId);
-
-        currentChatId = [myId, partnerId].sort().join('_');
-        const chatRef = db.ref('chats/' + currentChatId + '/messages');
-        chatRef.off();
-
-        document.getElementById('chatBox').innerHTML = '';
-        
-        chatRef.on('child_added', (snapshot) => {
-            const data = snapshot.val();
-            const key = snapshot.key;
-
-            if (data.sender !== myId && !data.read) {
-                db.ref('chats/' + currentChatId + '/messages/' + key).update({ read: true });
-            }
-
-            displayMessage(data, key, data.sender === myId ? 'my' : 'other');
-        });
-
-        chatRef.on('child_changed', (snapshot) => {
-            const data = snapshot.val();
-            const key = snapshot.key;
-            const statusSpan = document.getElementById('status_' + key);
-            if (statusSpan && data.read) {
-                statusSpan.innerText = '✓✓';
-                statusSpan.classList.add('read');
-            }
-        });
-    }
-
-    function sendMessage(content = null, type = 'text') {
-        if (!currentChatId) return alert('Сначала выберите или введите ID друга!');
-
-        let textVal = content;
-        if (type === 'text') {
-            const input = document.getElementById('messageInput');
-            textVal = input.value.trim();
-            if (!textVal) return;
-            input.value = '';
-        }
-
-        const msgData = {
-            sender: myId,
-            senderNick: myNickname,
-            type: type,
-            content: textVal,
-            timestamp: Date.now(),
-            read: false
-        };
-
-        if (replyToData) {
-            msgData.replyTo = replyToData.type === 'text' ? replyToData.content : 'Медиа файл';
-            cancelReply();
-        }
-
-        db.ref('chats/' + currentChatId + '/messages').push(msgData);
-        playSound(document.getElementById('soundSelect').value);
-    }
-
-    function displayMessage(data, key, side) {
-        const chatBox = document.getElementById('chatBox');
-        
-        const row = document.createElement('div');
-        row.className = `msg-row ${side}`;
-        row.id = 'row_' + key;
-
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.className = 'msg-checkbox';
-        checkbox.value = key;
-        checkbox.onchange = updateSelectedCount;
-        row.appendChild(checkbox);
-
-        const msgDiv = document.createElement('div');
-        msgDiv.className = `msg ${side}`;
-        msgDiv.onclick = () => {
-            if (isSelectMode) {
-                checkbox.checked = !checkbox.checked;
-                updateSelectedCount();
-            } else {
-                openMsgMenu(data, key);
-            }
-        };
-
-        if (data.senderNick) {
-            const nickSpan = document.createElement('div');
-            nickSpan.className = 'sender-nickname';
-            nickSpan.innerText = data.senderNick;
-            msgDiv.appendChild(nickSpan);
-        }
-
-        if (data.replyTo) {
-            const replyDiv = document.createElement('div');
-            replyDiv.className = 'reply-quote';
-            replyDiv.innerText = '↩️ ' + data.replyTo;
-            msgDiv.appendChild(replyDiv);
-        }
-        
-        if (data.type === 'image') {
-            const img = document.createElement('img');
-            img.src = data.content;
-            msgDiv.appendChild(img);
-        } else if (data.type === 'audio') {
-            const audio = document.createElement('audio');
-            audio.controls = true;
-            audio.src = data.content;
-            msgDiv.appendChild(audio);
-        } else {
-            const textSpan = document.createElement('span');
-            textSpan.innerText = data.content;
-            msgDiv.appendChild(textSpan);
-        }
-        
-        const footer = document.createElement('div');
-        footer.className = 'msg-footer';
-
-        const timeSpan = document.createElement('span');
-        timeSpan.className = 'msg-time';
-        const date = data.timestamp ? new Date(data.timestamp) : new Date();
-        timeSpan.innerText = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-        footer.appendChild(timeSpan);
-
-        if (side === 'my') {
-            const statusSpan = document.createElement('span');
-            statusSpan.className = `msg-status ${data.read ? 'read' : ''}`;
-            statusSpan.id = 'status_' + key;
-            statusSpan.innerText = data.read ? '✓✓' : '✓';
-            footer.appendChild(statusSpan);
-        }
-
-        msgDiv.appendChild(footer);
-        row.appendChild(msgDiv);
-        chatBox.appendChild(row);
-        chatBox.scrollTop = chatBox.scrollHeight;
-    }
-
-    function toggleSelectMode(enable) {
-        isSelectMode = enable;
-        const chatBox = document.getElementById('chatBox');
-        const bar = document.getElementById('multiDeleteBar');
-        if (enable) {
-            chatBox.classList.add('select-mode');
-            bar.style.display = 'flex';
-        } else {
-            chatBox.classList.remove('select-mode');
-            bar.style.display = 'none';
-            document.querySelectorAll('.msg-checkbox').forEach(cb => cb.checked = false);
-        }
-        updateSelectedCount();
-    }
-
-    function updateSelectedCount() {
-        const count = document.querySelectorAll('.msg-checkbox:checked').length;
-        document.getElementById('selectedCount').innerText = 'Выбрано: ' + count;
-    }
-
-    function deleteSelectedMessages() {
-        const selected = Array.from(document.querySelectorAll('.msg-checkbox:checked')).map(cb => cb.value);
-        if (selected.length === 0) return alert('Ничего не выбрано!');
-        
-        if (confirm(`Удалить выбранные сообщения (${selected.length} шт.)?`)) {
-            selected.forEach(key => {
-                db.ref('chats/' + currentChatId + '/messages/' + key).remove();
-            });
-            toggleSelectMode(false);
-            openChat(currentPartnerId);
-        }
-    }
-
-    function openMsgMenu(data, key) { selectedMsgData = data; selectedMsgKey = key; document.getElementById('msgMenuModal').style.display = 'flex'; }
-    function closeMsgMenu() { document.getElementById('msgMenuModal').style.display = 'none'; }
-
-    function actionReply() {
-        replyToData = selectedMsgData;
-        document.getElementById('replyText').innerText = 'Ответ на: ' + (replyToData.type === 'text' ? replyToData.content : 'Медиа');
-        document.getElementById('replyPreview').style.display = 'flex';
-        closeMsgMenu();
-    }
-
-    function cancelReply() { replyToData = null; document.getElementById('replyPreview').style.display = 'none'; }
-
-    function actionCopy() {
-        if (selectedMsgData.type === 'text') { navigator.clipboard.writeText(selectedMsgData.content); alert('Текст скопирован!'); }
-        closeMsgMenu();
-    }
-
-    function actionForward() {
-        const chats = getSavedChats();
-        if (chats.length === 0) return alert('У вас нет других сохраненных чатов!');
-        const targetId = prompt('Кому переслать?\n' + chats.join(', '));
-        if (targetId) {
-            const targetChatId = [myId, targetId.trim()].sort().join('_');
-            db.ref('chats/' + targetChatId + '/messages').push({
-                sender: myId, senderNick: myNickname, type: selectedMsgData.type, content: selectedMsgData.content, timestamp: Date.now(), read: false, replyTo: 'Переслано'
-            });
-            alert('Переслано!');
-        }
-        closeMsgMenu();
-    }
-
-    function actionSaveKittens() {
-        let kittens = JSON.parse(localStorage.getItem('mw_my_kittens') || '[]');
-        kittens.push({ content: selectedMsgData.content, type: selectedMsgData.type, date: new Date().toLocaleDateString() });
-        localStorage.setItem('mw_my_kittens', JSON.stringify(kittens));
-        alert('Сохранено в "Мои котята" 🐾');
-        closeMsgMenu();
-    }
-
-    function actionDelete() {
-        if (confirm('Удалить сообщение?')) {
-            if (currentChatId && selectedMsgKey) {
-                db.ref('chats/' + currentChatId + '/messages/' + selectedMsgKey).remove();
-                openChat(currentPartnerId);
-            }
-        }
-        closeMsgMenu();
-    }
-
-    function openQRModal() {
-        document.getElementById('qrModal').style.display = 'flex';
-        document.getElementById('qrcode').innerHTML = '';
-        new QRCode(document.getElementById('qrcode'), { text: myId, width: 160, height: 160 });
-    }
-
-    function startQRScanner() {
-        document.getElementById('qr-reader').style.display = 'block';
-        html5QrcodeScanner = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: 200 });
-        html5QrcodeScanner.render((scannedText) => {
-            html5QrcodeScanner.clear();
-            document.getElementById('qr-reader').style.display = 'none';
-            closeQRModal();
-            openChat(scannedText.trim());
-        });
-    }
-
-    function closeQRModal() {
-        if (html5QrcodeScanner) { try { html5QrcodeScanner.clear(); } catch(e){} }
-        document.getElementById('qrModal').style.display = 'none';
-    }
-
-    function handleImageUpload(e) {
-        const file = e.target.files[0]; if (!file) return;
-        const reader = new FileReader();
-        reader.onload = function(event) {
-            const img = new Image();
-            img.onload = function() {
-                const canvas = document.createElement('canvas');
-                const scale = 400 / img.width;
-                canvas.width = 400; canvas.height = img.height * scale;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                sendMessage(canvas.toDataURL('image/jpeg', 0.6), 'image');
-            }
-            img.src = event.target.result;
-        }
-        reader.readAsDataURL(file);
-    }
-
-    let mediaRecorder = null, audioChunks = [], isRecording = false;
-    async function toggleRecord() {
-        const btn = document.getElementById('recordBtn');
-        if (!isRecording) {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                mediaRecorder = new MediaRecorder(stream);
-                audioChunks = [];
-                mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
-                mediaRecorder.onstop = () => {
-                    const reader = new FileReader();
-                    reader.onloadend = () => sendMessage(reader.result, 'audio');
-                    reader.readAsDataURL(new Blob(audioChunks, { type: 'audio/webm' }));
-                };
-                mediaRecorder.start();
-                isRecording = true;
-                btn.classList.add('recording');
-            } catch (err) { alert('Нет доступа к микрофону!'); }
-        } else {
-            mediaRecorder.stop();
-            isRecording = false;
-            btn.classList.remove('recording');
-        }
-    }
-
-    document.getElementById('messageInput').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') sendMessage();
+  };
+
+  // Переключение меню
+  document.getElementById('lang-toggle').onclick = (e) => { e.stopPropagation(); toggleDropdown('lang-dropdown'); };
+  document.getElementById('theme-menu-toggle').onclick = (e) => { e.stopPropagation(); toggleDropdown('theme-dropdown'); };
+  document.getElementById('sound-menu-toggle').onclick = (e) => { e.stopPropagation(); toggleDropdown('sound-dropdown'); };
+
+  function toggleDropdown(id) {
+    document.querySelectorAll('.dropdown-menu').forEach(m => {
+      if (m.id !== id) m.classList.remove('show');
     });
-</script>
+    document.getElementById(id).classList.toggle('show');
+  }
 
+  document.addEventListener('click', () => {
+    document.querySelectorAll('.dropdown-menu').forEach(m => m.classList.remove('show'));
+  });
+
+  // Переключение языка
+  function setLanguage(lang) {
+    currentLang = lang;
+    document.getElementById('lang-toggle').innerText = lang + ' ▾';
+    
+    const d = dict[lang];
+    document.getElementById('btn-trader').innerText = d.trader;
+    document.getElementById('btn-chats').innerText = d.chats;
+    document.getElementById('btn-notes').innerText = d.notes;
+    document.getElementById('btn-enter').innerText = d.enter;
+    document.getElementById('msg-input').placeholder = d.placeholder;
+    document.getElementById('lbl-chat').innerText = d.chatLbl;
+
+    document.getElementById('th-beige').innerText = d.thBeige;
+    document.getElementById('th-pastel').innerText = d.thPastel;
+    document.getElementById('th-mint').innerText = d.thMint;
+    document.getElementById('th-hitech').innerText = d.thHitech;
+    document.getElementById('th-dark').innerText = d.thDark;
+  }
+
+  // Установка тем
+  function setTheme(theme) {
+    document.body.className = '';
+    if (theme === 'dark') document.body.classList.add('theme-dark');
+  }
+
+  // Звуки
+  function setSound(type) {
+    if (type !== 'mute') {
+      alert("Звуковой режим установлен: " + type);
+    }
+  }
+
+  // Отправка сообщений
+  function sendMessage() {
+    const input = document.getElementById('msg-input');
+    if (!input.value.trim()) return;
+
+    const msg = document.createElement('div');
+    msg.className = 'message-bubble out selectable';
+    msg.innerText = input.value;
+    msg.onclick = function() { toggleSelect(this); };
+
+    document.getElementById('messages-container').appendChild(msg);
+    input.value = '';
+    msg.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  function addImageMsg() {
+    const msg = document.createElement('div');
+    msg.className = 'message-bubble out selectable';
+    msg.innerHTML = `Фото:<img src="https://via.placeholder.com/150/8b5e3c/ffffff?text=Cat+Photo" class="message-img">`;
+    msg.onclick = function() { toggleSelect(this); };
+    document.getElementById('messages-container').appendChild(msg);
+    msg.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  // Выделение нескольких
+  function toggleSelectMode() {
+    isSelectMode = !isSelectMode;
+    document.getElementById('btn-multi-select').style.background = isSelectMode ? '#a07855' : '#f5f0eb';
+    document.getElementById('btn-multi-select').style.color = isSelectMode ? '#fff' : '#000';
+    if (!isSelectMode) clearSelections();
+  }
+
+  function toggleSelect(el) {
+    if (!isSelectMode) return;
+    el.classList.toggle('selected');
+    updateBatchBar();
+  }
+
+  function updateBatchBar() {
+    const selected = document.querySelectorAll('.message-bubble.selected');
+    const bar = document.getElementById('batch-bar');
+    if (selected.length > 0) {
+      bar.classList.add('show');
+      document.getElementById('selected-count').innerText = `Сайланды: ${selected.length}`;
+    } else {
+      bar.classList.remove('show');
+    }
+  }
+
+  function clearSelections() {
+    document.querySelectorAll('.message-bubble.selected').forEach(el => el.classList.remove('selected'));
+    updateBatchBar();
+  }
+
+  // Пересылка (WhatsApp / Telegram)
+  function shareSelected() {
+    const selected = document.querySelectorAll('.message-bubble.selected');
+    let textToShare = "";
+    selected.forEach(el => {
+      textToShare += el.innerText + "\n";
+    });
+
+    if (navigator.share) {
+      navigator.share({
+        title: 'Meow Whisper Chat',
+        text: textToShare
+      }).catch(err => console.log('Ошибка отправки:', err));
+    } else {
+      alert("Пересылка в внешние мессенджеры:\n\n" + textToShare);
+    }
+  }
+
+  // Сохранение пачкой
+  function saveSelectedPack() {
+    const selected = document.querySelectorAll('.message-bubble.selected');
+    alert(`Сакланды! (${selected.length} элементы сохранены кучкой)`);
+    clearSelections();
+  }
+</script>
 </body>
 </html>
