@@ -24,22 +24,22 @@
         body.rtl { direction: rtl; }
 
         * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; }
-        body { background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        body { background: var(--bg); color: var(--text); height: 100vh; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
 
         .bg-paws { position: fixed; inset: 0; opacity: var(--paw-op); pointer-events: none; background-image: radial-gradient(circle at center, var(--accent) 15%, transparent 15%); background-size: 80px 80px; z-index: 0; }
 
-        .header-tabs { display: flex; background: var(--panel); padding: 8px; gap: 8px; z-index: 10; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .header-tabs { display: flex; background: var(--panel); padding: 8px; gap: 8px; z-index: 10; box-shadow: 0 2px 8px rgba(0,0,0,0.05); flex-shrink: 0; }
         .tab { flex: 1; padding: 12px; border: none; background: rgba(255,255,255,0.4); cursor: pointer; border-radius: 10px; font-weight: bold; color: var(--text); transition: 0.2s; }
         .tab.active { background: var(--accent); color: white; }
 
-        .view { display: none; flex: 1; flex-direction: column; overflow-y: auto; position: relative; z-index: 1; }
+        .view { display: none; flex: 1; flex-direction: column; overflow: hidden; position: relative; z-index: 1; height: 100%; }
         .view.active { display: flex; }
 
-        .profile-bar { background: var(--card-bg); padding: 12px 20px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid rgba(0,0,0,0.05); }
-        .avatar-wrap { position: relative; width: 45px; height: 45px; cursor: pointer; }
-        .avatar { width: 100%; height: 100%; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; overflow: hidden; object-fit: cover; }
+        .profile-bar { background: var(--card-bg); padding: 10px 15px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid rgba(0,0,0,0.05); flex-shrink: 0; }
+        .avatar-wrap { position: relative; width: 40px; height: 40px; cursor: pointer; }
+        .avatar { width: 100%; height: 100%; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 18px; overflow: hidden; object-fit: cover; }
         
-        .connect-bar { padding: 10px 15px; display: flex; gap: 8px; background: rgba(0,0,0,0.02); }
+        .connect-bar { padding: 8px 12px; display: flex; gap: 8px; background: rgba(0,0,0,0.02); flex-shrink: 0; }
         
         #chat-area { flex: 1; padding: 15px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
         .msg { padding: 10px 14px; background: var(--msg-rec); border-radius: 14px; max-width: 75%; cursor: pointer; align-self: flex-start; box-shadow: 0 1px 3px rgba(0,0,0,0.08); display: flex; flex-direction: column; gap: 5px; position: relative; }
@@ -56,9 +56,9 @@
         .select-check { display: none; margin-right: 8px; }
         .multiselect-active .select-check { display: inline-block; }
 
-        .reply-preview { display: none; background: var(--card-bg); padding: 8px 15px; border-left: 4px solid var(--accent); justify-content: space-between; align-items: center; font-size: 13px; }
+        .reply-preview { display: none; background: var(--card-bg); padding: 8px 15px; border-left: 4px solid var(--accent); justify-content: space-between; align-items: center; font-size: 13px; flex-shrink: 0; }
 
-        .input-bar { padding: 10px 15px; display: flex; gap: 8px; background: var(--card-bg); align-items: center; }
+        .input-bar { padding: 10px 15px; display: flex; gap: 8px; background: var(--card-bg); align-items: center; flex-shrink: 0; border-top: 1px solid rgba(0,0,0,0.08); }
         .icon-btn { border: none; background: none; font-size: 22px; cursor: pointer; padding: 5px; opacity: 0.8; }
         .icon-btn:hover { opacity: 1; }
         .input-bar input[type="text"] { flex: 1; padding: 10px 14px; border-radius: 20px; border: 1px solid rgba(0,0,0,0.1); outline: none; }
@@ -96,11 +96,9 @@
             gap: 10px;
             transition: background 0.15s ease;
         }
-        #msg-menu button:hover {
-            background: rgba(0,0,0,0.04);
-        }
+        #msg-menu button:hover { background: rgba(0,0,0,0.04); }
 
-        .multi-bar { display: none; background: #e06d6d; color: white; padding: 10px 15px; justify-content: space-between; align-items: center; }
+        .multi-bar { display: none; background: #e06d6d; color: white; padding: 10px 15px; justify-content: space-between; align-items: center; flex-shrink: 0; }
 
         #media-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); justify-content: center; align-items: center; z-index: 300; }
         .modal-box { background: var(--card-bg); padding: 20px; border-radius: 16px; width: 300px; text-align: center; box-shadow: 0 5px 20px rgba(0,0,0,0.2); }
@@ -134,8 +132,8 @@
         </div>
         
         <div class="connect-bar">
-            <input type="text" id="peer-id-input" placeholder="ID (mw-xxxx)" style="flex:1; padding:8px; border-radius:8px; border:1px solid #ccc;">
-            <button id="btn-connect" onclick="connectToPeer()" style="padding:8px 15px; border-radius:8px; border:none; background:var(--accent); color:white;">Соединить</button>
+            <input type="text" id="peer-id-input" placeholder="ID собеседника (mw-xxxx)" style="flex:1; padding:8px; border-radius:8px; border:1px solid #ccc;">
+            <button id="btn-connect" onclick="connectToPeer()" style="padding:8px 15px; border-radius:8px; border:none; background:var(--accent); color:white; font-weight:bold; cursor:pointer;">Соединить</button>
         </div>
 
         <div class="multi-bar" id="multi-bar">
@@ -147,7 +145,7 @@
 
         <div class="reply-preview" id="reply-preview">
             <span id="reply-text"></span>
-            <button onclick="cancelReply()" style="border:none; background:none; cursor:pointer;">✕</button>
+            <button onclick="cancelReply()" style="border:none; background:none; cursor:pointer; font-weight:bold;">✕</button>
         </div>
 
         <div class="input-bar">
@@ -213,7 +211,7 @@
     <!-- Сканер Модалка -->
     <div id="scanner-modal">
         <div id="reader"></div>
-        <button onclick="closeScanner()" style="padding: 8px 20px; border-radius: 8px; border: none; background: white;">Закрыть</button>
+        <button onclick="closeScanner()" style="padding: 8px 20px; border-radius: 8px; border: none; background: white; font-weight: bold; cursor: pointer;">Закрыть</button>
     </div>
 
     <!-- Контекстное меню сообщений -->
@@ -229,9 +227,8 @@
     <!-- FIREBASE MODULE & MESSENGER LOGIC -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, push, onChildAdded, onChildRemoved, remove, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getDatabase, ref, push, onChildAdded, onChildRemoved, remove, serverTimestamp, off } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-        // Твой конфиг Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyBYP7VgXjs6eovGU8ptQignO8ha_uQCpwQ",
             authDomain: "my-cat-3db92.firebaseapp.com",
@@ -240,23 +237,22 @@
             messagingSenderId: "572307984373",
             appId: "1:572307984373:web:afbd346db8c6797b201abc",
             measurementId: "G-XT16L5FLHT",
-            databaseURL: "https://my-cat-3db92-default-rtdb.firebaseio.com" // Авто-связка с Realtime DB
+            databaseURL: "https://my-cat-3db92-default-rtdb.firebaseio.com"
         };
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // Генерация и сохранение собственного ID
         let myId = localStorage.getItem('mw_user_id');
         if (!myId) {
-            myId = 'mw-' + Math.random().toString(36).substr(2, 6);
+            myId = 'mw-' + Math.floor(1000 + Math.random() * 9000);
             localStorage.setItem('mw_user_id', myId);
         }
         document.getElementById('my-id').innerText = myId;
         new QRCode(document.getElementById("my-qr"), myId);
 
         let currentChatId = 'global';
-        let activeListener = null;
+        let currentMessagesRef = null;
 
         function getChatRoomId(peerId) {
             if (!peerId) return 'global';
@@ -264,13 +260,17 @@
         }
 
         function listenToChat(chatId) {
+            if (currentMessagesRef) {
+                off(currentMessagesRef);
+            }
+
             const chatArea = document.getElementById('chat-area');
             chatArea.innerHTML = '';
             currentChatId = chatId;
 
-            const messagesRef = ref(db, 'chats/' + chatId);
+            currentMessagesRef = ref(db, 'chats/' + chatId);
 
-            onChildAdded(messagesRef, (snapshot) => {
+            onChildAdded(currentMessagesRef, (snapshot) => {
                 const data = snapshot.val();
                 const key = snapshot.key;
                 if (!document.querySelector(`[data-key="${key}"]`)) {
@@ -278,7 +278,7 @@
                 }
             });
 
-            onChildRemoved(messagesRef, (snapshot) => {
+            onChildRemoved(currentMessagesRef, (snapshot) => {
                 const key = snapshot.key;
                 const el = document.querySelector(`[data-key="${key}"]`);
                 if (el) el.remove();
@@ -288,18 +288,15 @@
         window.connectToPeer = function() {
             const peerId = document.getElementById('peer-id-input').value.trim();
             if (peerId === myId) {
-                alert("Нельзя соединиться с самим собой!");
+                alert("Вы ввели свой собственный ID!");
                 return;
             }
             const roomId = getChatRoomId(peerId);
             listenToChat(roomId);
-            alert(peerId ? `Подключено к чату с: ${peerId}` : "Переключено на Общий Чат");
         };
 
-        // Старт с общего чата
         listenToChat('global');
 
-        // Отправка сообщений в Firebase
         window.sendFirebaseMsg = function(contentHtml) {
             const messagesRef = ref(db, 'chats/' + currentChatId);
             push(messagesRef, {
@@ -520,7 +517,7 @@
 
                     mediaRecorder.start();
                     mic.style.color = 'red';
-                } catch(err) { alert('Не удалось включить микрофон: разрешите доступ в настройках.'); }
+                } catch(err) { alert('Разрешите доступ к микрофону в настройках браузера.'); }
             } else {
                 mediaRecorder.stop();
                 mic.style.color = '';
@@ -557,9 +554,9 @@
             let video = body.querySelector('video');
 
             if(img) {
-                shareData.text = 'Посмотреть фото из MeowWhisper: ' + img.src;
+                shareData.text = 'Фото из MeowWhisper: ' + img.src;
             } else if(video) {
-                shareData.text = 'Посмотреть видео из MeowWhisper: ' + video.src;
+                shareData.text = 'Видео из MeowWhisper: ' + video.src;
             } else {
                 shareData.text = body.innerText;
             }
@@ -568,7 +565,7 @@
                 try { await navigator.share(shareData); } catch(e){}
             } else {
                 navigator.clipboard.writeText(shareData.text);
-                alert('Ссылка/текст скопированы в буфер обмена!');
+                alert('Скопировано в буфер обмена!');
             }
             closeMenu();
         }
