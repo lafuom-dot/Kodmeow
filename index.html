@@ -3,11 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meow Whisper Instant Chat</title>
+    <title>Meow Whisper Instant Chat v5.0</title>
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <!-- QR Code & Scanner Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         :root {
             --bg-color: #f5eedc;
@@ -16,61 +19,66 @@
             --my-msg-bg: #e8d8c8;
             --other-msg-bg: #ffffff;
             --text-color: #333333;
+            --doodle-color: rgba(139, 90, 43, 0.05);
         }
 
-        body.theme-beige { --bg-color: #f5eedc; --main-color: #8b5a2b; --chat-bg: #fffcf7; --my-msg-bg: #e8d8c8; }
-        body.theme-pastel-blue { --bg-color: #e6f0fa; --main-color: #4a7c59; --chat-bg: #f4f8fb; --my-msg-bg: #d0e1f9; }
-        body.theme-mint { --bg-color: #e8f5e9; --main-color: #2e7d32; --chat-bg: #f1f8e9; --my-msg-bg: #c8e6c9; }
-        body.theme-hitech { --bg-color: #eceff1; --main-color: #37474f; --chat-bg: #ffffff; --my-msg-bg: #cfd8dc; }
+        body.theme-beige { --bg-color: #f5eedc; --main-color: #8b5a2b; --chat-bg: #fffcf7; --my-msg-bg: #e8d8c8; --other-msg-bg: #ffffff; --text-color: #333; --doodle-color: rgba(139, 90, 43, 0.05); }
+        body.theme-pastel-blue { --bg-color: #e6f0fa; --main-color: #3b6b8c; --chat-bg: #f4f8fb; --my-msg-bg: #cbe0f8; --other-msg-bg: #ffffff; --text-color: #223; --doodle-color: rgba(59, 107, 140, 0.05); }
+        body.theme-mint { --bg-color: #e8f5e9; --main-color: #2e7d32; --chat-bg: #f1f8e9; --my-msg-bg: #c8e6c9; --other-msg-bg: #ffffff; --text-color: #1b3e1d; --doodle-color: rgba(46, 125, 50, 0.05); }
+        body.theme-hitech { --bg-color: #eceff1; --main-color: #37474f; --chat-bg: #ffffff; --my-msg-bg: #cfd8dc; --other-msg-bg: #f5f5f5; --text-color: #212121; --doodle-color: rgba(55, 71, 79, 0.04); }
+        body.theme-dark-forest { --bg-color: #0f1715; --main-color: #1b382b; --chat-bg: #12221b; --my-msg-bg: #224a38; --other-msg-bg: #1c2e26; --text-color: #e0ece6; --doodle-color: rgba(255, 255, 255, 0.04); }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
         body { background-color: var(--bg-color); color: var(--text-color); display: flex; justify-content: center; align-items: center; height: 100vh; }
         
-        .app-container { width: 100%; max-width: 480px; height: 95vh; background: var(--chat-bg); display: flex; flex-direction: column; border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); overflow: hidden; position: relative; }
+        .app-container { width: 100%; max-width: 480px; height: 95vh; background: var(--chat-bg); display: flex; flex-direction: column; border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.2); overflow: hidden; position: relative; }
         
         .header { background: var(--main-color); color: #fff; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
         .top-bar { display: flex; justify-content: space-between; align-items: center; }
-        .title { font-weight: bold; font-size: 14px; }
+        .title { font-weight: bold; font-size: 13px; }
         
-        .controls { display: flex; gap: 4px; }
+        .controls { display: flex; gap: 4px; flex-wrap: wrap; }
         select, button { padding: 4px 6px; border-radius: 6px; border: none; font-size: 11px; cursor: pointer; outline: none; }
 
-        .id-bar { font-size: 12px; background: rgba(255,255,255,0.2); padding: 6px 10px; border-radius: 8px; display: flex; gap: 6px; align-items: center; }
+        .id-bar { font-size: 12px; background: rgba(255,255,255,0.15); padding: 6px 10px; border-radius: 8px; display: flex; gap: 6px; align-items: center; }
         .id-bar input { border: none; padding: 5px 8px; border-radius: 4px; flex: 1; outline: none; font-size: 12px; }
-        .id-bar button { background: #fff; color: var(--main-color); font-weight: bold; padding: 5px 10px; }
+        .id-bar button { background: #fff; color: #333; font-weight: bold; padding: 5px 8px; }
 
-        .chat-box { flex: 1; padding: 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background: var(--chat-bg); }
+        /* Чат бокс + Обои с котиками в стиле WhatsApp */
+        .chat-box { flex: 1; padding: 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background-color: var(--chat-bg); background-image: url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%238b5a2b' fill-opacity='0.06'%3E%3Cpath d='M20 20c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm10 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm-5 6c2.2 0 4-1.8 4-4s-1.8-4-4-4-4 1.8-4 4 1.8 4 4 4zm25-10c0-2.2-1.8-4-4-4s-4 1.8-4 4 1.8 4 4 4 4-1.8 4-4zm10 20c-3 0-5 2-5 5s2 5 5 5 5-2 5-5-2-5-5-5zM15 60c0 3 2 5 5 5s5-2 5-5-2-5-5-5-5 2-5 5zm45 0c0 3 2 5 5 5s5-2 5-5-2-5-5-5-5 2-5 5z'/%3E%3C/g%3E%3C/svg%3E"); }
         
-        .msg { max-width: 80%; padding: 8px 12px; border-radius: 14px; font-size: 14px; line-height: 1.4; word-wrap: break-word; box-shadow: 0 1px 3px rgba(0,0,0,0.08); position: relative; display: flex; flex-direction: column; cursor: pointer; user-select: none; }
+        .msg { max-width: 80%; padding: 8px 12px; border-radius: 14px; font-size: 14px; line-height: 1.4; word-wrap: break-word; box-shadow: 0 1px 3px rgba(0,0,0,0.12); position: relative; display: flex; flex-direction: column; cursor: pointer; }
         .msg.my { background: var(--my-msg-bg); align-self: flex-end; border-bottom-right-radius: 2px; }
         .msg.other { background: var(--other-msg-bg); align-self: flex-start; border-bottom-left-radius: 2px; }
         
-        .reply-quote { background: rgba(0,0,0,0.06); border-left: 3px solid var(--main-color); padding: 4px 8px; font-size: 11px; margin-bottom: 4px; border-radius: 4px; opacity: 0.8; }
+        .reply-quote { background: rgba(0,0,0,0.08); border-left: 3px solid var(--main-color); padding: 4px 8px; font-size: 11px; margin-bottom: 4px; border-radius: 4px; }
 
         .msg img { max-width: 100%; border-radius: 8px; margin-top: 4px; }
         .msg audio { max-width: 200px; margin-top: 4px; }
-        .msg-time { font-size: 10px; opacity: 0.65; align-self: flex-end; margin-top: 4px; }
+        
+        .msg-footer { display: flex; justify-content: flex-end; align-items: center; gap: 4px; margin-top: 2px; align-self: flex-end; }
+        .msg-time { font-size: 10px; opacity: 0.65; }
+        .msg-status { font-size: 11px; font-weight: bold; opacity: 0.7; }
+        .msg-status.read { color: #34b7f1; }
 
-        .reply-preview { display: none; background: #eee; padding: 6px 12px; font-size: 12px; border-left: 4px solid var(--main-color); justify-content: space-between; align-items: center; }
+        .reply-preview { display: none; background: rgba(0,0,0,0.05); padding: 6px 12px; font-size: 12px; border-left: 4px solid var(--main-color); justify-content: space-between; align-items: center; }
         .reply-preview button { background: none; border: none; font-weight: bold; color: #888; font-size: 14px; }
 
-        .footer { display: flex; padding: 8px; background: #fff; border-top: 1px solid #eee; gap: 6px; align-items: center; }
-        .footer input[type="text"] { flex: 1; padding: 8px 12px; border: 1px solid #ddd; border-radius: 20px; outline: none; font-size: 13px; }
+        .footer { display: flex; padding: 8px; background: var(--other-msg-bg); border-top: 1px solid rgba(0,0,0,0.08); gap: 6px; align-items: center; }
+        .footer input[type="text"] { flex: 1; padding: 8px 12px; border: 1px solid #ddd; border-radius: 20px; outline: none; font-size: 13px; background: var(--chat-bg); color: var(--text-color); }
         
-        .action-btn { background: #f0f0f0; color: #333; border: none; width: 34px; height: 34px; border-radius: 50%; font-size: 15px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .action-btn { background: rgba(0,0,0,0.05); color: var(--text-color); border: none; width: 34px; height: 34px; border-radius: 50%; font-size: 15px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
         .action-btn.recording { background: #ff4d4d; color: white; animation: pulse 1s infinite; }
         .send-btn { background: var(--main-color); color: white; border: none; width: 36px; height: 36px; border-radius: 50%; font-size: 15px; display: flex; align-items: center; justify-content: center; }
 
         /* Модальные окна */
-        .modal { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100; justify-content: center; align-items: center; }
-        .modal-content { background: #fff; width: 85%; max-width: 360px; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 10px; max-height: 80vh; overflow-y: auto; }
-        .modal-title { font-weight: bold; font-size: 15px; margin-bottom: 5px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
-        .chat-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; background: #f9f9f9; border-radius: 8px; cursor: pointer; }
-        .chat-item:hover { background: #f0f0f0; }
+        .modal { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 100; justify-content: center; align-items: center; }
+        .modal-content { background: var(--other-msg-bg); color: var(--text-color); width: 85%; max-width: 360px; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 10px; max-height: 80vh; overflow-y: auto; }
+        .modal-title { font-weight: bold; font-size: 15px; margin-bottom: 5px; border-bottom: 1px solid rgba(0,0,0,0.1); padding-bottom: 5px; }
+        .chat-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; background: rgba(0,0,0,0.04); border-radius: 8px; cursor: pointer; }
         .btn-del-chat { background: #ff4d4d; color: white; border: none; padding: 2px 6px; border-radius: 4px; font-size: 10px; }
 
-        .msg-menu-btn { padding: 8px 12px; background: #f5f5f5; border: 1px solid #ddd; border-radius: 8px; text-align: left; font-size: 13px; display: flex; gap: 8px; align-items: center; }
-        .msg-menu-btn:hover { background: #e8e8e8; }
+        .msg-menu-btn { padding: 8px 12px; background: rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.08); border-radius: 8px; text-align: left; font-size: 13px; display: flex; gap: 8px; align-items: center; color: var(--text-color); }
 
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
     </style>
@@ -82,7 +90,9 @@
         <div class="top-bar">
             <span class="title" id="myIdDisplay">ID: ...</span>
             <div class="controls">
-                <button onclick="toggleChatsModal()" style="background: #fff; color: var(--main-color); font-weight: bold;">📋 Чаты</button>
+                <button onclick="toggleChatsModal()" id="btnSavedChats">📋 Чаты</button>
+                <button onclick="toggleKittensModal()" id="btnMyKittens">🐾 Мои котята</button>
+                <button onclick="openQRModal()">📷 QR</button>
                 <select id="langSelect" onchange="changeLanguage()">
                     <option value="ru">Русский</option>
                     <option value="en">English</option>
@@ -91,10 +101,16 @@
                     <option value="ar">العربية</option>
                 </select>
                 <select id="themeSelect" onchange="changeTheme()">
-                    <option value="theme-beige">Бежевый</option>
-                    <option value="theme-pastel-blue">Пастельно-голубой</option>
-                    <option value="theme-mint">Мятный</option>
-                    <option value="theme-hitech">Хай-тек</option>
+                    <option value="theme-beige" id="optThemeBeige">Бежевый</option>
+                    <option value="theme-pastel-blue" id="optThemeBlue">Пастельно-голубой</option>
+                    <option value="theme-mint" id="optThemeMint">Мятный</option>
+                    <option value="theme-hitech" id="optThemeHitech">Хай-тек</option>
+                    <option value="theme-dark-forest" id="optThemeDarkForest">Чёрный лес</option>
+                </select>
+                <select id="soundSelect" onchange="demoSound()">
+                    <option value="meow" id="optSoundMeow">🐾 Мяу</option>
+                    <option value="crunch" id="optSoundCrunch">🍖 Хруст</option>
+                    <option value="hiss" id="optSoundHiss">🐍 Шипенье</option>
                 </select>
             </div>
         </div>
@@ -121,25 +137,45 @@
         <button class="send-btn" onclick="sendMessage()">➤</button>
     </div>
 
-    <!-- Модалка списка сохраненных чатов -->
+    <!-- Модалка сохраненных чатов -->
     <div class="modal" id="chatsModal">
         <div class="modal-content">
-            <div class="modal-title">Сохраненные чаты</div>
+            <div class="modal-title" id="titleSavedChats">Сохраненные чаты</div>
             <div id="chatsList" style="display: flex; flex-direction: column; gap: 6px;"></div>
-            <button onclick="toggleChatsModal()" style="margin-top: 10px; background: #ddd;">Закрыть</button>
+            <button onclick="toggleChatsModal()" style="margin-top: 10px;" id="btnCloseChats">Закрыть</button>
         </div>
     </div>
 
-    <!-- Модалка действия с сообщением -->
+    <!-- Модалка Блокнот Мои котята -->
+    <div class="modal" id="kittensModal">
+        <div class="modal-content">
+            <div class="modal-title" id="titleKittens">🐾 Мои котята (Заметки)</div>
+            <div id="kittensList" style="display: flex; flex-direction: column; gap: 6px;"></div>
+            <button onclick="toggleKittensModal()" style="margin-top: 10px;" id="btnCloseKittens">Закрыть</button>
+        </div>
+    </div>
+
+    <!-- Модалка QR Кода и Сканера -->
+    <div class="modal" id="qrModal">
+        <div class="modal-content" style="align-items: center; text-align: center;">
+            <div class="modal-title" id="titleQR">Мой QR Код / Сканер</div>
+            <div id="qrcode" style="margin: 10px auto;"></div>
+            <div id="qr-reader" style="width: 100%; display: none;"></div>
+            <button onclick="startQRScanner()" id="btnStartScan" style="width: 100%; background: var(--main-color); color: #fff; padding: 8px;">📷 Сканировать QR друга</button>
+            <button onclick="closeQRModal()" style="margin-top: 6px; width: 100%;" id="btnCloseQR">Закрыть</button>
+        </div>
+    </div>
+
+    <!-- Модалка контекстного меню сообщения -->
     <div class="modal" id="msgMenuModal">
         <div class="modal-content">
-            <div class="modal-title">Действие с сообщением</div>
-            <button class="msg-menu-btn" onclick="actionReply()">↩️ Ответить</button>
-            <button class="msg-menu-btn" onclick="actionCopy()">📋 Копировать текст</button>
-            <button class="msg-menu-btn" onclick="actionForward()">↗️ Переслать</button>
-            <button class="msg-menu-btn" onclick="actionSaveKittens()">🐾 В "Мои котята"</button>
-            <button class="msg-menu-btn" onclick="actionDelete()" style="color: red;">🗑️ Удалить</button>
-            <button onclick="closeMsgMenu()" style="margin-top: 6px; background: #ddd;">Отмена</button>
+            <div class="modal-title" id="titleMsgMenu">Действие с сообщением</div>
+            <button class="msg-menu-btn" onclick="actionReply()" id="mReply">↩️ Ответить</button>
+            <button class="msg-menu-btn" onclick="actionCopy()" id="mCopy">📋 Копировать текст</button>
+            <button class="msg-menu-btn" onclick="actionForward()" id="mForward">↗️ Переслать</button>
+            <button class="msg-menu-btn" onclick="actionSaveKittens()" id="mSave">🐾 В "Мои котята"</button>
+            <button class="msg-menu-btn" onclick="actionDelete()" id="mDelete" style="color: red;">🗑️ Удалить</button>
+            <button onclick="closeMsgMenu()" style="margin-top: 6px;" id="mCancel">Отмена</button>
         </div>
     </div>
 </div>
@@ -161,6 +197,49 @@
 
     auth.signInAnonymously().catch((error) => console.error("Ошибка авторизации:", error));
 
+    const i18n = {
+        ru: {
+            savedChats: "📋 Чаты", myKittens: "🐾 Мои котята", chatWith: "Чат с:", connect: "Войти", placeholder: "Напишите сообщение...",
+            themeBeige: "Бежевый", themeBlue: "Пастельно-голубой", themeMint: "Мятный", themeHitech: "Хай-тек", themeDarkForest: "Чёрный лес",
+            soundMeow: "🐾 Мяу", soundCrunch: "🍖 Хруст", soundHiss: "🐍 Шипенье",
+            titleSaved: "Сохраненные чаты", titleKittens: "🐾 Мои котята (Заметки)", titleQR: "Мой QR-код / Сканер", titleMenu: "Действие с сообщением",
+            reply: "↩️ Ответить", copy: "📋 Копировать текст", forward: "↗️ Переслать", save: "🐾 В \"Мои котята\"", del: "🗑️ Удалить", cancel: "Отмена", close: "Закрыть",
+            startScan: "📷 Сканировать QR друга", noChats: "Нет сохраненных чатов", noKittens: "Заметок пока нет"
+        },
+        en: {
+            savedChats: "📋 Chats", myKittens: "🐾 My Kittens", chatWith: "Chat with:", connect: "Join", placeholder: "Type a message...",
+            themeBeige: "Beige", themeBlue: "Pastel Blue", themeMint: "Mint", themeHitech: "Hi-Tech", themeDarkForest: "Dark Forest",
+            soundMeow: "🐾 Meow", soundCrunch: "🍖 Crunch", soundHiss: "🐍 Hiss",
+            titleSaved: "Saved Chats", titleKittens: "🐾 My Kittens (Notes)", titleQR: "My QR Code / Scanner", titleMenu: "Message Options",
+            reply: "↩️ Reply", copy: "📋 Copy Text", forward: "↗️ Forward", save: "🐾 To \"My Kittens\"", del: "🗑️ Delete", cancel: "Cancel", close: "Close",
+            startScan: "📷 Scan Friend's QR", noChats: "No saved chats", noKittens: "No notes yet"
+        },
+        tr: {
+            savedChats: "📋 Sohbetler", myKittens: "🐾 Kedilerim", chatWith: "Sohbet:", connect: "Giriş", placeholder: "Mesaj yazın...",
+            themeBeige: "Bej", themeBlue: "Pastel Mavi", themeMint: "Nane", themeHitech: "Hi-Tech", themeDarkForest: "Karanlık Orman",
+            soundMeow: "🐾 Miyav", soundCrunch: "🍖 Çıtır", soundHiss: "🐍 Tisss",
+            titleSaved: "Kaydedilen Sohbetler", titleKittens: "🐾 Kedilerim (Notlar)", titleQR: "QR Kodum / Tarayıcı", titleMenu: "Mesaj Seçenekleri",
+            reply: "↩️ Yanıtla", copy: "📋 Metni Kopyala", forward: "↗️ İlet", save: "🐾 \"Kedilerim\"e Ekle", del: "🗑️ Sil", cancel: "İptal", close: "Kapat",
+            startScan: "📷 Arkadaşının QR'ını Taramak", noChats: "Kayıtlı sohbet yok", noKittens: "Henüz not yok"
+        },
+        tt: {
+            savedChats: "📋 Чатлар", myKittens: "🐾 Минем пешикләрем", chatWith: "Чат:", connect: "Керү", placeholder: "Хәбәр языгыз...",
+            themeBeige: "Беж", themeBlue: "Пастель күк", themeMint: "Мятный", themeHitech: "Хай-тек", themeDarkForest: "Кара урман",
+            soundMeow: "🐾 Мяу", soundCrunch: "🍖 Хруст", soundHiss: "🐍 Шипенье",
+            titleSaved: "Сакланган чатлар", titleKittens: "🐾 Минем пешикләрем (Заметкалар)", titleQR: "Мой QR / Сканер", titleMenu: "Хәбәр белән гамәл",
+            reply: "↩️ Җавап бирергә", copy: "📋 Күчерергә", forward: "↗️ Җибәрергә", save: "🐾 \"Пешикләрем\"гә", del: "🗑️ Югалырга", cancel: "Баш тарту", close: "Ябарга",
+            startScan: "📷 QR сканерлау", noChats: "Сакланган чатлар юк", noKittens: "Заметкалар юк"
+        },
+        ar: {
+            savedChats: "📋 المحادثات", myKittens: "🐾 قططي", chatWith: "محادثة مع:", connect: "دخول", placeholder: "اكتب رسالة...",
+            themeBeige: "بيج", themeBlue: "أزرق فاتح", themeMint: "نعناعي", themeHitech: "تقني", themeDarkForest: "الغابة المظلمة",
+            soundMeow: "🐾 مياو", soundCrunch: "🍖 قرمشة", soundHiss: "🐍 فحيح",
+            titleSaved: "المحادثات المحفوظة", titleKittens: "🐾 قططي (ملاحظات)", titleQR: "رمز QR الخاص بي", titleMenu: "خيارات الرسالة",
+            reply: "↩️ رد", copy: "📋 نسخ النص", forward: "↗️ إعادة توجيه", save: "🐾 حفظ إلى \"قططي\"", del: "🗑️ حذف", cancel: "إلغاء", close: "إغلاق",
+            startScan: "📷 مسح QR للصديق", noChats: "لا توجد محادثات", noKittens: "لا توجد ملاحظات"
+        }
+    };
+
     let myId = localStorage.getItem('mw_user_id');
     if (!myId) {
         myId = 'mw-' + Math.floor(1000 + Math.random() * 9000);
@@ -173,51 +252,111 @@
     let selectedMsgData = null;
     let selectedMsgKey = null;
     let replyToData = null;
+    let html5QrcodeScanner = null;
 
-    // Управление сохраненными чатами в localStorage
-    function getSavedChats() {
-        return JSON.parse(localStorage.getItem('mw_saved_chats') || '[]');
+    function playSound(type) {
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain); gain.connect(ctx.destination);
+
+            if (type === 'meow') {
+                osc.frequency.setValueAtTime(400, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 0.15);
+                osc.frequency.exponentialRampToValueAtTime(300, ctx.currentTime + 0.3);
+                gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+                osc.start(); osc.stop(ctx.currentTime + 0.3);
+            } else if (type === 'crunch') {
+                osc.type = 'square'; osc.frequency.setValueAtTime(150, ctx.currentTime);
+                gain.gain.setValueAtTime(0.2, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+                osc.start(); osc.stop(ctx.currentTime + 0.1);
+            } else if (type === 'hiss') {
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(1200, ctx.currentTime);
+                gain.gain.setValueAtTime(0.1, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
+                osc.start(); osc.stop(ctx.currentTime + 0.25);
+            }
+        } catch(e) {}
     }
 
+    function demoSound() {
+        playSound(document.getElementById('soundSelect').value);
+    }
+
+    function changeLanguage() {
+        const lang = document.getElementById('langSelect').value;
+        const t = i18n[lang] || i18n.ru;
+
+        document.getElementById('btnSavedChats').innerText = t.savedChats;
+        document.getElementById('btnMyKittens').innerText = t.myKittens;
+        document.getElementById('labelPartner').innerText = t.chatWith;
+        document.getElementById('btnConnect').innerText = t.connect;
+        document.getElementById('messageInput').placeholder = t.placeholder;
+
+        document.getElementById('optThemeBeige').innerText = t.themeBeige;
+        document.getElementById('optThemeBlue').innerText = t.themeBlue;
+        document.getElementById('optThemeMint').innerText = t.themeMint;
+        document.getElementById('optThemeHitech').innerText = t.themeHitech;
+        document.getElementById('optThemeDarkForest').innerText = t.themeDarkForest;
+
+        document.getElementById('optSoundMeow').innerText = t.soundMeow;
+        document.getElementById('optSoundCrunch').innerText = t.soundCrunch;
+        document.getElementById('optSoundHiss').innerText = t.soundHiss;
+
+        document.getElementById('titleSavedChats').innerText = t.titleSaved;
+        document.getElementById('titleKittens').innerText = t.titleKittens;
+        document.getElementById('titleQR').innerText = t.titleQR;
+        document.getElementById('titleMsgMenu').innerText = t.titleMenu;
+
+        document.getElementById('mReply').innerText = t.reply;
+        document.getElementById('mCopy').innerText = t.copy;
+        document.getElementById('mForward').innerText = t.forward;
+        document.getElementById('mSave').innerText = t.save;
+        document.getElementById('mDelete').innerText = t.del;
+        document.getElementById('mCancel').innerText = t.cancel;
+
+        document.getElementById('btnCloseChats').innerText = t.close;
+        document.getElementById('btnCloseKittens').innerText = t.close;
+        document.getElementById('btnCloseQR').innerText = t.close;
+        document.getElementById('btnStartScan').innerText = t.startScan;
+    }
+
+    function changeTheme() {
+        document.body.className = document.getElementById('themeSelect').value;
+    }
+
+    // Сохраненные чаты
+    function getSavedChats() { return JSON.parse(localStorage.getItem('mw_saved_chats') || '[]'); }
     function saveChatToList(partnerId) {
         let chats = getSavedChats();
-        if (!chats.includes(partnerId)) {
-            chats.push(partnerId);
-            localStorage.setItem('mw_saved_chats', JSON.stringify(chats));
-        }
+        if (!chats.includes(partnerId)) { chats.push(partnerId); localStorage.setItem('mw_saved_chats', JSON.stringify(chats)); }
     }
-
     function removeChatFromList(partnerId, e) {
         e.stopPropagation();
         let chats = getSavedChats().filter(id => id !== partnerId);
         localStorage.setItem('mw_saved_chats', JSON.stringify(chats));
         renderChatsList();
-        if (currentPartnerId === partnerId) {
-            document.getElementById('chatBox').innerHTML = '';
-            document.getElementById('partnerIdInput').value = '';
-            currentChatId = null;
-            currentPartnerId = null;
-        }
     }
 
     function renderChatsList() {
         const listDiv = document.getElementById('chatsList');
         const chats = getSavedChats();
+        const lang = document.getElementById('langSelect').value;
         listDiv.innerHTML = '';
 
         if (chats.length === 0) {
-            listDiv.innerHTML = '<span style="font-size:12px; color:#888;">Нет сохраненных чатов</span>';
+            listDiv.innerHTML = `<span style="font-size:12px; opacity:0.6;">${i18n[lang].noChats}</span>`;
             return;
         }
 
         chats.forEach(partnerId => {
             const item = document.createElement('div');
             item.className = 'chat-item';
-            item.innerHTML = `<span>🐾 ${partnerId}</span> <button class="btn-del-chat" onclick="removeChatFromList('${partnerId}', event)">Удалить</button>`;
-            item.onclick = () => {
-                openChat(partnerId);
-                toggleChatsModal();
-            };
+            item.innerHTML = `<span>🐾 ${partnerId}</span> <button class="btn-del-chat" onclick="removeChatFromList('${partnerId}', event)">✕</button>`;
+            item.onclick = () => { openChat(partnerId); toggleChatsModal(); };
             listDiv.appendChild(item);
         });
     }
@@ -226,6 +365,34 @@
         const modal = document.getElementById('chatsModal');
         modal.style.display = modal.style.display === 'flex' ? 'none' : 'flex';
         if (modal.style.display === 'flex') renderChatsList();
+    }
+
+    // Раздел Мои котята (Заметки)
+    function toggleKittensModal() {
+        const modal = document.getElementById('kittensModal');
+        modal.style.display = modal.style.display === 'flex' ? 'none' : 'flex';
+        if (modal.style.display === 'flex') renderKittensList();
+    }
+
+    function renderKittensList() {
+        const listDiv = document.getElementById('kittensList');
+        const kittens = JSON.parse(localStorage.getItem('mw_my_kittens') || '[]');
+        const lang = document.getElementById('langSelect').value;
+        listDiv.innerHTML = '';
+
+        if (kittens.length === 0) {
+            listDiv.innerHTML = `<span style="font-size:12px; opacity:0.6;">${i18n[lang].noKittens}</span>`;
+            return;
+        }
+
+        kittens.forEach((item, idx) => {
+            const div = document.createElement('div');
+            div.className = 'chat-item';
+            div.style.flexDirection = 'column';
+            div.style.alignItems = 'flex-start';
+            div.innerHTML = `<div style="font-size:13px;">${item.content}</div><div style="font-size:10px; opacity:0.5; margin-top:4px;">${item.date}</div>`;
+            listDiv.appendChild(div);
+        });
     }
 
     function connectToChatFromInput() {
@@ -248,7 +415,24 @@
         chatRef.on('child_added', (snapshot) => {
             const data = snapshot.val();
             const key = snapshot.key;
+
+            // Если сообщение чужое — помечаем как прочитанное
+            if (data.sender !== myId && !data.read) {
+                db.ref('chats/' + currentChatId + '/messages/' + key).update({ read: true });
+            }
+
             displayMessage(data, key, data.sender === myId ? 'my' : 'other');
+        });
+
+        // Отслеживание изменений (для синих галочек)
+        chatRef.on('child_changed', (snapshot) => {
+            const data = snapshot.val();
+            const key = snapshot.key;
+            const statusSpan = document.getElementById('status_' + key);
+            if (statusSpan && data.read) {
+                statusSpan.innerText = '✓✓';
+                statusSpan.classList.add('read');
+            }
         });
     }
 
@@ -267,23 +451,23 @@
             sender: myId,
             type: type,
             content: textVal,
-            timestamp: Date.now()
+            timestamp: Date.now(),
+            read: false
         };
 
         if (replyToData) {
-            msgData.replyTo = replyToData.type === 'text' ? replyToData.content : (replyToData.type === 'image' ? '📷 Фото' : '🎙️ Голосовое');
+            msgData.replyTo = replyToData.type === 'text' ? replyToData.content : 'Медиа файл';
             cancelReply();
         }
 
         db.ref('chats/' + currentChatId + '/messages').push(msgData);
+        playSound(document.getElementById('soundSelect').value);
     }
 
     function displayMessage(data, key, side) {
         const chatBox = document.getElementById('chatBox');
         const msgDiv = document.createElement('div');
         msgDiv.className = `msg ${side}`;
-        
-        // Клик открывает меню действий
         msgDiv.onclick = () => openMsgMenu(data, key);
 
         if (data.replyTo) {
@@ -308,102 +492,111 @@
             msgDiv.appendChild(textSpan);
         }
         
+        const footer = document.createElement('div');
+        footer.className = 'msg-footer';
+
         const timeSpan = document.createElement('span');
         timeSpan.className = 'msg-time';
         const date = data.timestamp ? new Date(data.timestamp) : new Date();
         timeSpan.innerText = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+        footer.appendChild(timeSpan);
 
-        msgDiv.appendChild(timeSpan);
+        if (side === 'my') {
+            const statusSpan = document.createElement('span');
+            statusSpan.className = `msg-status ${data.read ? 'read' : ''}`;
+            statusSpan.id = 'status_' + key;
+            statusSpan.innerText = data.read ? '✓✓' : '✓';
+            footer.appendChild(statusSpan);
+        }
+
+        msgDiv.appendChild(footer);
         chatBox.appendChild(msgDiv);
         chatBox.scrollTop = chatBox.scrollHeight;
     }
 
-    // Меню действий с сообщением
-    function openMsgMenu(data, key) {
-        selectedMsgData = data;
-        selectedMsgKey = key;
-        document.getElementById('msgMenuModal').style.display = 'flex';
-    }
-
-    function closeMsgMenu() {
-        document.getElementById('msgMenuModal').style.display = 'none';
-    }
+    // Действия с сообщениями
+    function openMsgMenu(data, key) { selectedMsgData = data; selectedMsgKey = key; document.getElementById('msgMenuModal').style.display = 'flex'; }
+    function closeMsgMenu() { document.getElementById('msgMenuModal').style.display = 'none'; }
 
     function actionReply() {
         replyToData = selectedMsgData;
-        document.getElementById('replyText').innerText = 'Ответ на: ' + (replyToData.type === 'text' ? replyToData.content : 'Медиа файл');
+        document.getElementById('replyText').innerText = 'Ответ на: ' + (replyToData.type === 'text' ? replyToData.content : 'Медиа');
         document.getElementById('replyPreview').style.display = 'flex';
         closeMsgMenu();
     }
 
-    function cancelReply() {
-        replyToData = null;
-        document.getElementById('replyPreview').style.display = 'none';
-    }
+    function cancelReply() { replyToData = null; document.getElementById('replyPreview').style.display = 'none'; }
 
     function actionCopy() {
-        if (selectedMsgData.type === 'text') {
-            navigator.clipboard.writeText(selectedMsgData.content);
-            alert('Текст скопирован!');
-        } else {
-            alert('Скопировать можно только текстовые сообщения');
-        }
+        if (selectedMsgData.type === 'text') { navigator.clipboard.writeText(selectedMsgData.content); alert('Текст скопирован!'); }
         closeMsgMenu();
     }
 
     function actionForward() {
         const chats = getSavedChats();
         if (chats.length === 0) return alert('У вас нет других сохраненных чатов!');
-        
-        const targetId = prompt('Введите ID кому переслать (или выберите из списка чатов):\n' + chats.join(', '));
+        const targetId = prompt('Кому переслать?\n' + chats.join(', '));
         if (targetId) {
             const targetChatId = [myId, targetId.trim()].sort().join('_');
             db.ref('chats/' + targetChatId + '/messages').push({
-                sender: myId,
-                type: selectedMsgData.type,
-                content: selectedMsgData.content,
-                timestamp: Date.now(),
-                replyTo: 'Переслано сообщение'
+                sender: myId, type: selectedMsgData.type, content: selectedMsgData.content, timestamp: Date.now(), read: false, replyTo: 'Переслано'
             });
-            alert('Сообщение переслано!');
+            alert('Переслано!');
         }
         closeMsgMenu();
     }
 
     function actionSaveKittens() {
         let kittens = JSON.parse(localStorage.getItem('mw_my_kittens') || '[]');
-        kittens.push({
-            content: selectedMsgData.content,
-            type: selectedMsgData.type,
-            date: new Date().toLocaleDateString()
-        });
+        kittens.push({ content: selectedMsgData.content, type: selectedMsgData.type, date: new Date().toLocaleDateString() });
         localStorage.setItem('mw_my_kittens', JSON.stringify(kittens));
-        alert('Сохранено в раздел "Мои котята" 🐾');
+        alert('Сохранено в "Мои котята" 🐾');
         closeMsgMenu();
     }
 
     function actionDelete() {
-        if (confirm('Удалить это сообщение?')) {
+        if (confirm('Удалить сообщение?')) {
             if (currentChatId && selectedMsgKey) {
                 db.ref('chats/' + currentChatId + '/messages/' + selectedMsgKey).remove();
-                openChat(currentPartnerId); // Перезагружаем список
+                openChat(currentPartnerId);
             }
         }
         closeMsgMenu();
     }
 
-    // Фото и Запись аудио
+    // QR код и сканер
+    function openQRModal() {
+        document.getElementById('qrModal').style.display = 'flex';
+        document.getElementById('qrcode').innerHTML = '';
+        new QRCode(document.getElementById('qrcode'), { text: myId, width: 160, height: 160 });
+    }
+
+    function startQRScanner() {
+        document.getElementById('qr-reader').style.display = 'block';
+        html5QrcodeScanner = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: 200 });
+        html5QrcodeScanner.render((scannedText) => {
+            html5QrcodeScanner.clear();
+            document.getElementById('qr-reader').style.display = 'none';
+            closeQRModal();
+            openChat(scannedText.trim());
+        });
+    }
+
+    function closeQRModal() {
+        if (html5QrcodeScanner) { try { html5QrcodeScanner.clear(); } catch(e){} }
+        document.getElementById('qrModal').style.display = 'none';
+    }
+
+    // Фото и Аудио
     function handleImageUpload(e) {
-        const file = e.target.files[0];
-        if (!file) return;
+        const file = e.target.files[0]; if (!file) return;
         const reader = new FileReader();
         reader.onload = function(event) {
             const img = new Image();
             img.onload = function() {
                 const canvas = document.createElement('canvas');
-                const scaleSize = 400 / img.width;
-                canvas.width = 400;
-                canvas.height = img.height * scaleSize;
+                const scale = 400 / img.width;
+                canvas.width = 400; canvas.height = img.height * scale;
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                 sendMessage(canvas.toDataURL('image/jpeg', 0.6), 'image');
@@ -437,9 +630,6 @@
             btn.classList.remove('recording');
         }
     }
-
-    function changeLanguage() {}
-    function changeTheme() { document.body.className = document.getElementById('themeSelect').value; }
 
     document.getElementById('messageInput').addEventListener('keypress', (e) => {
         if (e.key === 'Enter') sendMessage();
