@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Meow Whisper Chat v8.0</title>
+  <title>Meow Whisper Chat v8.1</title>
   <style>
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
 
     body {
@@ -18,15 +18,14 @@
       justify-content: center;
       align-items: center;
       min-height: 100vh;
-      padding: 10px;
+      padding: 5px;
       color: #333;
     }
 
-    /* Основной контейнер - полная адаптивность */
     .app-container {
       width: 100%;
-      max-width: 800px;
-      height: 94vh;
+      max-width: 900px;
+      height: 96vh;
       background: #ffffff;
       border-radius: 20px;
       display: flex;
@@ -36,7 +35,7 @@
       position: relative;
     }
 
-    /* Верхняя панель */
+    /* Шапка */
     .header {
       padding: 10px 12px;
       background: #fff;
@@ -47,17 +46,50 @@
       flex-wrap: wrap;
     }
 
+    .profile-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #faf6f0;
+      border: 1px solid #d7ccc8;
+      padding: 4px 8px;
+      border-radius: 20px;
+      cursor: pointer;
+    }
+
     .avatar {
-      width: 40px;
-      height: 40px;
+      width: 32px;
+      height: 32px;
       border-radius: 50%;
-      background: #f0e6df;
+      background: #a07855;
+      color: #fff;
       display: flex;
       align-items: center;
       justify-content: center;
       font-weight: bold;
-      color: #8b5e3c;
-      border: 1px solid #d7ccc8;
+      font-size: 14px;
+      overflow: hidden;
+    }
+
+    .avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .user-info {
+      display: flex;
+      flex-direction: column;
+      font-size: 11px;
+    }
+
+    .user-name {
+      font-weight: bold;
+      color: #4a3b32;
+    }
+
+    .user-id {
+      color: #888;
     }
 
     .nav-btn {
@@ -69,7 +101,6 @@
       font-size: 13px;
       font-weight: 500;
       cursor: pointer;
-      transition: 0.2s;
     }
 
     .nav-btn.active {
@@ -84,7 +115,6 @@
       gap: 6px;
     }
 
-    /* Выпадающее меню открывается влево от края, чтобы не срезаться */
     .dropdown-menu {
       position: absolute;
       top: 110%;
@@ -132,7 +162,6 @@
       border-radius: 10px;
       outline: none;
       font-size: 13px;
-      background: #fff;
     }
 
     .btn-action {
@@ -144,6 +173,18 @@
       cursor: pointer;
       font-size: 13px;
       font-weight: bold;
+    }
+
+    /* Экраны вкладок */
+    .tab-content {
+      display: none;
+      flex: 1;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .tab-content.active {
+      display: flex;
     }
 
     /* Сообщения */
@@ -190,18 +231,13 @@
       display: block;
     }
 
-    /* Панель пакетного сохранения/пересылки */
-    .batch-actions-bar {
-      padding: 8px 12px;
-      background: #eef2f5;
-      display: none;
-      justify-content: space-between;
-      align-items: center;
-      border-top: 1px solid #d0d7de;
-    }
-
-    .batch-actions-bar.show {
-      display: flex;
+    /* Вкладки "Чатлар" и "Язмалар" */
+    .placeholder-tab {
+      padding: 20px;
+      text-align: center;
+      color: #666;
+      flex: 1;
+      overflow-y: auto;
     }
 
     /* Нижняя панель */
@@ -250,7 +286,33 @@
       font-size: 16px;
     }
 
-    /* Темы оформления */
+    /* Модальное окно профиля и QR */
+    .modal {
+      display: none;
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal.show {
+      display: flex;
+    }
+
+    .modal-card {
+      background: #fff;
+      padding: 20px;
+      border-radius: 16px;
+      width: 90%;
+      max-width: 320px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* Темы */
     body.theme-dark .app-container { background: #1e1e1e; color: #fff; }
     body.theme-dark .header, body.theme-dark .input-bar, body.theme-dark .room-bar { background: #252525; border-color: #333; }
     body.theme-dark .message-bubble { background: #333; color: #fff; }
@@ -260,15 +322,22 @@
 <body>
 
 <div class="app-container">
-  <!-- Верхняя шапка -->
   <div class="header">
-    <div class="avatar">🐱</div>
-    <button class="nav-btn active" id="btn-trader">Трейдер</button>
-    <button class="nav-btn" id="btn-chats">Чатлар</button>
-    <button class="nav-btn" id="btn-notes">Язмалар</button>
+    <div class="profile-btn" onclick="openProfileModal()">
+      <div class="avatar" id="header-avatar">🐱</div>
+      <div class="user-info">
+        <span class="user-name" id="header-name">Котик</span>
+        <span class="user-id" id="header-id">ID: 8842</span>
+      </div>
+    </div>
+
+    <button class="nav-btn active" id="tab-btn-trader" onclick="switchTab('trader')">Трейдер</button>
+    <button class="nav-btn" id="tab-btn-chats" onclick="switchTab('chats')">Чатлар</button>
+    <button class="nav-btn" id="tab-btn-notes" onclick="switchTab('notes')">Язмалар</button>
 
     <div class="dropdown-container">
-      <!-- Звуковое меню -->
+      <button class="icon-btn" onclick="openQRModal()" title="QR-код">🔳</button>
+
       <button class="icon-btn" id="sound-menu-toggle" title="Звуки">🔔</button>
       <div class="dropdown-menu" id="sound-dropdown">
         <div class="dropdown-item" onclick="setSound('meow')">🐱 Мяуканье</div>
@@ -277,14 +346,12 @@
         <div class="dropdown-item" onclick="setSound('mute')">🔇 Без звука</div>
       </div>
 
-      <!-- Переключатель языка -->
       <button class="nav-btn" id="lang-toggle">TT ▾</button>
       <div class="dropdown-menu" id="lang-dropdown">
         <div class="dropdown-item" onclick="setLanguage('TT')">Татарча (TT)</div>
         <div class="dropdown-item" onclick="setLanguage('RU')">Русский (RU)</div>
       </div>
 
-      <!-- Выбор темы -->
       <button class="icon-btn" id="theme-menu-toggle" title="Темы">🎨</button>
       <div class="dropdown-menu" id="theme-dropdown">
         <div class="dropdown-item" onclick="setTheme('beige')" id="th-beige">аксыл-көрән</div>
@@ -296,76 +363,161 @@
     </div>
   </div>
 
-  <!-- Адрес комнаты -->
   <div class="room-bar">
     <span style="font-size: 12px; color: #777;" id="lbl-chat">Чат:</span>
     <input type="text" class="room-input" value="mw-1234" id="room-id">
     <button class="btn-action" id="btn-enter">Керү</button>
   </div>
 
-  <!-- Окно сообщений -->
-  <div class="messages-area" id="messages-container">
-    <div class="message-bubble selectable" onclick="toggleSelect(this)">
-      Сәлам! Тәҗрибәне башлыйбызмы?
+  <div class="tab-content active" id="tab-trader">
+    <div class="messages-area" id="messages-container">
+      <div class="message-bubble selectable" onclick="toggleSelect(this)">
+        Сәлам! Тәҗрибәне башлыйбызмы?
+      </div>
+      <div class="message-bubble out selectable" onclick="toggleSelect(this)">
+        Әйе, барысы да әзер!
+      </div>
     </div>
-    <div class="message-bubble out selectable" onclick="toggleSelect(this)">
-      Әйе, барысы да әзер!
-      <img src="https://via.placeholder.com/150/a07855/ffffff?text=Photo+1" class="message-img">
+
+    <div class="input-bar">
+      <button class="icon-btn" id="btn-multi-select" onclick="toggleSelectMode()" title="Выбрать несколько">☑️</button>
+      <button class="icon-btn" title="Картинка" onclick="triggerImageUpload()">🖼️</button>
+      <input type="file" id="file-input" accept="image/*" style="display:none" onchange="uploadImage(event)">
+      <button class="icon-btn" title="Голосовое" onclick="playCurrentSound()">🎙️</button>
+      <input type="text" class="chat-input" placeholder="Хәбәр языгыз..." id="msg-input" onkeydown="if(event.key==='Enter') sendMessage()">
+      <button class="send-btn" onclick="sendMessage()">➔</button>
     </div>
   </div>
 
-  <!-- Панель выделенных объектов -->
-  <div class="batch-actions-bar" id="batch-bar">
-    <span id="selected-count" style="font-size: 12px;">Сайланды: 0</span>
-    <div style="display: flex; gap: 6px;">
-      <button class="nav-btn" onclick="shareSelected()" style="background: #25D366; color: white;">Переслать (WhatsApp/TG)</button>
-      <button class="btn-action" onclick="saveSelectedPack()">Саклау (Кучка белән)</button>
+  <div class="tab-content" id="tab-chats">
+    <div class="placeholder-tab">
+      <h3 id="chats-title">Барлык чатлар (Все чаты)</h3>
+      <p style="margin-top: 10px;">1. Трейдер чаты (mw-1234)</p>
+      <p>2. Общий чат</p>
     </div>
   </div>
 
-  <!-- Ввод сообщения -->
-  <div class="input-bar">
-    <button class="icon-btn" id="btn-multi-select" onclick="toggleSelectMode()" title="Выбрать несколько">☑️</button>
-    <button class="icon-btn" title="Картинка" onclick="addImageMsg()">🖼️</button>
-    <button class="icon-btn" title="Голосовое">🎙️</button>
-    <input type="text" class="chat-input" placeholder="Хәбәр языгыз..." id="msg-input">
-    <button class="send-btn" onclick="sendMessage()">➔</button>
+  <div class="tab-content" id="tab-notes">
+    <div class="placeholder-tab">
+      <h3 id="notes-title">Язмалар (Заметки)</h3>
+      <p style="margin-top: 10px;">Монда сезнең искәрмәләр булачак.</p>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="profile-modal">
+  <div class="modal-card">
+    <h3>Профиль</h3>
+    <label style="font-size: 12px;">Исем (Имя):</label>
+    <input type="text" id="input-username" class="room-input" value="Котик">
+    <button class="btn-action" onclick="saveProfile()">Саклау (Сохранить)</button>
+    <button class="nav-btn" onclick="closeModals()">Ябу (Закрыть)</button>
+  </div>
+</div>
+
+<div class="modal" id="qr-modal">
+  <div class="modal-card" style="text-align: center;">
+    <h3>QR-код</h3>
+    <div style="font-size: 60px; margin: 10px 0;">🔳</div>
+    <p style="font-size: 12px; color: #666;">Сканерлагыз чатка керү өчен</p>
+    <button class="btn-action" onclick="closeModals()" style="margin-top: 10px;">ОК</button>
   </div>
 </div>
 
 <script>
   let currentLang = 'TT';
   let isSelectMode = false;
+  let activeSound = 'meow';
 
-  // Словарь с полной татарской графикой (Ә, Ө, Ү, Җ, Ң, Һ)
-  const dict = {
-    TT: {
-      trader: "Трейдер",
-      chats: "Чатлар",
-      notes: "Язмалар",
-      enter: "Керү",
-      placeholder: "Хәбәр языгыз...",
-      chatLbl: "Чат:",
-      thBeige: "аксыл-көрән",
-      thPastel: "ачык күк",
-      thMint: "бөтнек",
-      thHitech: "хай-тек",
-      thDark: "кара урман"
-    },
-    RU: {
-      trader: "Трейдер",
-      chats: "Чаты",
-      notes: "Заметки",
-      enter: "Войти",
-      placeholder: "Напишите сообщение...",
-      chatLbl: "Чат:",
-      thBeige: "Бежевый",
-      thPastel: "Пастельно-голубой",
-      thMint: "Мятный",
-      thHitech: "Хай-тек",
-      thDark: "Темный лес"
+  // Инициализация звукового синтезатора (Web Audio API)
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+  function playSoundTone(freq, duration) {
+    if (activeSound === 'mute') return;
+    try {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.frequency.value = freq;
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
+      osc.stop(audioCtx.currentTime + duration);
+    } catch(e) {}
+  }
+
+  function playCurrentSound() {
+    if (activeSound === 'meow') playSoundTone(600, 0.2);
+    else if (activeSound === 'purr') playSoundTone(150, 0.4);
+    else if (activeSound === 'pop') playSoundTone(800, 0.05);
+  }
+
+  // Переключение вкладок
+  function switchTab(tabName) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+
+    document.getElementById('tab-' + tabName).classList.add('active');
+    document.getElementById('tab-btn-' + tabName).classList.add('active');
+  }
+
+  // Модальные окна
+  function openProfileModal() {
+    document.getElementById('profile-modal').classList.add('show');
+  }
+  function openQRModal() {
+    document.getElementById('qr-modal').classList.add('show');
+  }
+  function closeModals() {
+    document.querySelectorAll('.modal').forEach(m => m.classList.remove('show'));
+  }
+
+  function saveProfile() {
+    const val = document.getElementById('input-username').value;
+    if (val.trim()) {
+      document.getElementById('header-name').innerText = val;
+      document.getElementById('header-avatar').innerText = val[0].toUpperCase();
     }
-  };
+    closeModals();
+  }
+
+  // Загрузка фото
+  function triggerImageUpload() {
+    document.getElementById('file-input').click();
+  }
+
+  function uploadImage(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(event) {
+      const msg = document.createElement('div');
+      msg.className = 'message-bubble out selectable';
+      msg.innerHTML = `<img src="${event.target.result}" class="message-img">`;
+      msg.onclick = function() { toggleSelect(this); };
+      document.getElementById('messages-container').appendChild(msg);
+      msg.scrollIntoView({ behavior: 'smooth' });
+      playCurrentSound();
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // Отправка сообщений
+  function sendMessage() {
+    const input = document.getElementById('msg-input');
+    if (!input.value.trim()) return;
+
+    const msg = document.createElement('div');
+    msg.className = 'message-bubble out selectable';
+    msg.innerText = input.value;
+    msg.onclick = function() { toggleSelect(this); };
+
+    document.getElementById('messages-container').appendChild(msg);
+    input.value = '';
+    msg.scrollIntoView({ behavior: 'smooth' });
+    playCurrentSound();
+  }
 
   // Переключение меню
   document.getElementById('lang-toggle').onclick = (e) => { e.stopPropagation(); toggleDropdown('lang-dropdown'); };
@@ -383,15 +535,27 @@
     document.querySelectorAll('.dropdown-menu').forEach(m => m.classList.remove('show'));
   });
 
-  // Переключение языка
+  // Локализация
+  const dict = {
+    TT: {
+      trader: "Трейдер", chats: "Чатлар", notes: "Язмалар", enter: "Керү",
+      placeholder: "Хәбәр языгыз...", chatLbl: "Чат:",
+      thBeige: "аксыл-көрән", thPastel: "ачык күк", thMint: "бөтнек", thHitech: "хай-тек", thDark: "кара урман"
+    },
+    RU: {
+      trader: "Трейдер", chats: "Чаты", notes: "Заметки", enter: "Войти",
+      placeholder: "Напишите сообщение...", chatLbl: "Чат:",
+      thBeige: "Бежевый", thPastel: "Пастельно-голубой", thMint: "Мятный", thHitech: "Хай-тек", thDark: "Темный лес"
+    }
+  };
+
   function setLanguage(lang) {
     currentLang = lang;
     document.getElementById('lang-toggle').innerText = lang + ' ▾';
-    
     const d = dict[lang];
-    document.getElementById('btn-trader').innerText = d.trader;
-    document.getElementById('btn-chats').innerText = d.chats;
-    document.getElementById('btn-notes').innerText = d.notes;
+    document.getElementById('tab-btn-trader').innerText = d.trader;
+    document.getElementById('tab-btn-chats').innerText = d.chats;
+    document.getElementById('tab-btn-notes').innerText = d.notes;
     document.getElementById('btn-enter').innerText = d.enter;
     document.getElementById('msg-input').placeholder = d.placeholder;
     document.getElementById('lbl-chat').innerText = d.chatLbl;
@@ -403,96 +567,25 @@
     document.getElementById('th-dark').innerText = d.thDark;
   }
 
-  // Установка тем
   function setTheme(theme) {
     document.body.className = '';
     if (theme === 'dark') document.body.classList.add('theme-dark');
   }
 
-  // Звуки
   function setSound(type) {
-    if (type !== 'mute') {
-      alert("Звуковой режим установлен: " + type);
-    }
+    activeSound = type;
+    playCurrentSound();
   }
 
-  // Отправка сообщений
-  function sendMessage() {
-    const input = document.getElementById('msg-input');
-    if (!input.value.trim()) return;
-
-    const msg = document.createElement('div');
-    msg.className = 'message-bubble out selectable';
-    msg.innerText = input.value;
-    msg.onclick = function() { toggleSelect(this); };
-
-    document.getElementById('messages-container').appendChild(msg);
-    input.value = '';
-    msg.scrollIntoView({ behavior: 'smooth' });
-  }
-
-  function addImageMsg() {
-    const msg = document.createElement('div');
-    msg.className = 'message-bubble out selectable';
-    msg.innerHTML = `Фото:<img src="https://via.placeholder.com/150/8b5e3c/ffffff?text=Cat+Photo" class="message-img">`;
-    msg.onclick = function() { toggleSelect(this); };
-    document.getElementById('messages-container').appendChild(msg);
-    msg.scrollIntoView({ behavior: 'smooth' });
-  }
-
-  // Выделение нескольких
   function toggleSelectMode() {
     isSelectMode = !isSelectMode;
     document.getElementById('btn-multi-select').style.background = isSelectMode ? '#a07855' : '#f5f0eb';
     document.getElementById('btn-multi-select').style.color = isSelectMode ? '#fff' : '#000';
-    if (!isSelectMode) clearSelections();
   }
 
   function toggleSelect(el) {
     if (!isSelectMode) return;
     el.classList.toggle('selected');
-    updateBatchBar();
-  }
-
-  function updateBatchBar() {
-    const selected = document.querySelectorAll('.message-bubble.selected');
-    const bar = document.getElementById('batch-bar');
-    if (selected.length > 0) {
-      bar.classList.add('show');
-      document.getElementById('selected-count').innerText = `Сайланды: ${selected.length}`;
-    } else {
-      bar.classList.remove('show');
-    }
-  }
-
-  function clearSelections() {
-    document.querySelectorAll('.message-bubble.selected').forEach(el => el.classList.remove('selected'));
-    updateBatchBar();
-  }
-
-  // Пересылка (WhatsApp / Telegram)
-  function shareSelected() {
-    const selected = document.querySelectorAll('.message-bubble.selected');
-    let textToShare = "";
-    selected.forEach(el => {
-      textToShare += el.innerText + "\n";
-    });
-
-    if (navigator.share) {
-      navigator.share({
-        title: 'Meow Whisper Chat',
-        text: textToShare
-      }).catch(err => console.log('Ошибка отправки:', err));
-    } else {
-      alert("Пересылка в внешние мессенджеры:\n\n" + textToShare);
-    }
-  }
-
-  // Сохранение пачкой
-  function saveSelectedPack() {
-    const selected = document.querySelectorAll('.message-bubble.selected');
-    alert(`Сакланды! (${selected.length} элементы сохранены кучкой)`);
-    clearSelections();
   }
 </script>
 </body>
